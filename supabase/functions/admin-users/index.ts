@@ -11,7 +11,7 @@
 
 // deno-lint-ignore-file no-explicit-any
 
-// / <reference types="https://deno.land/x/deploy@1.8.0/types/deploy.d.ts" />
+/// <reference path="./deno.d.ts" />
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
@@ -34,7 +34,7 @@ interface UpdateMetadataPayload { userId: string; metadata: Record<string, any> 
 
 type Payload = Partial<CreatePayload & DeletePayload & UpdateEmailPayload & UpdateMetadataPayload> & { action?: string }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -56,10 +56,10 @@ Deno.serve(async (req) => {
     // Client bound to the caller's JWT (to read caller identity)
     const supabaseUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
-    })
+    }) as any
 
     // Admin client for privileged operations
-    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY) as any
 
     // Identify the caller
     const { data: userData, error: userErr } = await supabaseUser.auth.getUser()

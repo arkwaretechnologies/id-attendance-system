@@ -38,28 +38,27 @@ npm install
 ```
 
 This will install all the required dependencies including:
-- React and React DOM
-- React Router for navigation
+- Next.js and React
 - Supabase JavaScript client
-- Vite for development and building
+- Tailwind CSS
 - Lucide React for icons
 
 ### Step 2: Configure Environment Variables
 
-1. Copy the `.env.example` file to `.env`:
+1. Copy the `.env.example` file to `.env.local`:
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
    ```
    
    Or on Windows:
    ```cmd
-   copy .env.example .env
+   copy .env.example .env.local
    ```
 
-2. Open the `.env` file and replace the placeholder values with your actual Supabase credentials:
+2. Open the `.env.local` file and replace the placeholder values with your actual Supabase credentials:
    ```env
-   VITE_SUPABASE_URL=https://your-project-id.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
    ```
 
    **Where to find these values:**
@@ -122,10 +121,10 @@ In the project directory, you can run:
 Starts the development server with hot reload.
 
 ### `npm run build`
-Builds the app for production to the `dist` folder.
+Builds the app for production (output in `.next` folder).
 
-### `npm run preview`
-Serves the production build locally for testing.
+### `npm run start` / `npm run preview`
+Serves the production build locally with `next start`.
 
 ### `npm run lint`
 Runs ESLint to check for code quality issues.
@@ -133,30 +132,41 @@ Runs ESLint to check for code quality issues.
 ## Project Structure
 
 ```
-IDSys/
+id-attendance-system/
+├── app/                    # Next.js App Router (TypeScript)
+│   ├── layout.tsx          # Root layout and providers
+│   ├── page.tsx            # Home (redirects to dashboard or login)
+│   ├── globals.css         # Global styles
+│   ├── login/
+│   ├── dashboard/
+│   ├── students/
+│   ├── scanner/
+│   ├── attendance/
+│   └── ...
 ├── public/                 # Static assets
 ├── src/
-│   ├── components/         # React components
-│   │   ├── Login.jsx      # Login page
-│   │   ├── Register.jsx   # Registration page
-│   │   ├── Dashboard.jsx  # Main dashboard
-│   │   ├── StudentManagement.jsx  # Student CRUD
-│   │   ├── AttendanceScanner.jsx  # RF ID scanner
-│   │   ├── AttendanceRecords.jsx  # Attendance history
-│   │   └── Navbar.jsx     # Navigation bar
-│   ├── contexts/          # React contexts
-│   │   └── AuthContext.jsx # Authentication context
-│   ├── lib/               # Utility libraries
-│   │   └── supabase.js    # Supabase configuration
-│   ├── App.jsx            # Main app component
-│   ├── main.jsx           # App entry point
-│   └── index.css          # Global styles
-├── database/              # Database related files
-│   ├── schema.sql         # Database schema
-│   └── setup-guide.md     # Database setup guide
-├── .env.example           # Environment variables template
-├── package.json           # Dependencies and scripts
-└── vite.config.js         # Vite configuration
+│   ├── components/         # React components (.tsx)
+│   │   ├── Login.tsx       # Login page
+│   │   ├── Register.tsx    # Registration page
+│   │   ├── Dashboard.tsx   # Main dashboard
+│   │   ├── StudentManagement.tsx  # Student CRUD
+│   │   ├── AttendanceScanner.tsx  # RF ID scanner
+│   │   ├── AttendanceRecords.tsx # Attendance history
+│   │   └── Navbar.tsx      # Navigation bar
+│   ├── contexts/           # React contexts
+│   │   └── AuthContext.tsx # Authentication context
+│   ├── hooks/              # useAuth, useStudent
+│   ├── lib/                # Utility libraries (.ts)
+│   │   └── supabase.ts     # Supabase configuration
+│   ├── types/              # Shared TypeScript types
+│   └── index.css           # Legacy global styles (app uses app/globals.css)
+├── database/               # Database related files
+│   ├── schema.sql          # Database schema
+│   └── setup-guide.md      # Database setup guide
+├── .env.example            # Environment variables template (.env.local for local)
+├── package.json            # Dependencies and scripts
+├── tsconfig.json           # TypeScript configuration
+└── next.config.mjs         # Next.js configuration
 ```
 
 ## Features
@@ -185,7 +195,7 @@ IDSys/
    - Verify with `node --version` and `npm --version`
 
 2. **"Supabase connection error"**
-   - Check your `.env` file has correct Supabase URL and key
+   - Check your `.env.local` file has correct NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
    - Verify your Supabase project is active
    - Check network connectivity
 
@@ -217,10 +227,10 @@ IDSys/
 - Implements proper error handling
 
 ### Adding New Features
-1. Create new components in `src/components/`
-2. Add routes in `src/App.jsx`
+1. Create new components in `src/components/` (TypeScript/React: `.tsx`)
+2. Add routes under `app/` (e.g. `app/my-page/page.tsx`) using Next.js App Router
 3. Use the `useAuth` hook for authentication
-4. Use database functions from `src/lib/supabase.js`
+4. Use database functions from `src/lib/supabase.ts`; env vars use `NEXT_PUBLIC_*` for client exposure
 
 ## Deployment
 
@@ -231,11 +241,10 @@ For production deployment:
    npm run build
    ```
 
-2. **Deploy the `dist` folder** to your hosting provider:
-   - Netlify
-   - Vercel
-   - GitHub Pages
-   - Any static hosting service
+2. **Deploy** to your hosting provider (see DEPLOYMENT.md):
+   - Vercel (recommended for Next.js)
+   - Netlify (Next.js runtime)
+   - Or run `npm run start` on a Node.js server
 
 3. **Update environment variables** in your hosting provider's settings
 

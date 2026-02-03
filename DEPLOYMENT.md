@@ -14,63 +14,39 @@
 2. Connect Vercel to your GitHub account
 3. Import your repository in Vercel
 4. Configure environment variables in Vercel dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-5. Deploy automatically
-
-#### Vercel Configuration
-```json
-{
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install"
-}
-```
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. Deploy automatically (Vercel detects Next.js and uses default build/output)
 
 ### 2. Netlify
 
 #### Steps
-1. Build the project: `npm run build`
-2. Upload `dist` folder to Netlify
+1. Connect repository; Netlify will detect Next.js
+2. Build command: `npm run build`; publish directory: `.next` (or use Netlify Next.js runtime)
 3. Configure environment variables in Netlify dashboard
 4. Set up continuous deployment from GitHub
 
-### 3. Traditional Web Hosting
+### 3. Traditional Web Hosting (Node.js)
+
+Next.js requires a Node.js server for production. You cannot serve only static files like a Vite SPA.
 
 #### Steps
-1. Run `npm run build` to create production build
-2. Upload contents of `dist` folder to your web server
-3. Configure web server to serve `index.html` for all routes (SPA routing)
-
-#### Apache Configuration (.htaccess)
-```apache
-RewriteEngine On
-RewriteBase /
-RewriteRule ^index\.html$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
-```
-
-#### Nginx Configuration
-```nginx
-location / {
-  try_files $uri $uri/ /index.html;
-}
-```
+1. Run `npm run build` to create production build (output in `.next` folder)
+2. Run `npm run start` (or `next start`) on your server
+3. Use a process manager (e.g. PM2) and reverse proxy (e.g. Nginx) to serve the app on port 3000 (or your chosen port)
 
 ## Environment Variables for Production
 
 ### Required Variables
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ### Optional Variables (for notifications)
 ```env
-VITE_EMAIL_SERVICE_API_KEY=your-email-api-key
-VITE_SMS_SERVICE_API_KEY=your-sms-api-key
+NEXT_PUBLIC_EMAIL_SERVICE_API_KEY=your-email-api-key
+NEXT_PUBLIC_SEMAPHORE_API_KEY=your-sms-api-key
 ```
 
 ## Supabase Production Setup
@@ -145,14 +121,15 @@ npm run preview
 rm -rf node_modules package-lock.json
 npm install
 
-# Clear Vite cache
-npm run build -- --force
+# Clear Next.js cache and rebuild
+rm -rf .next
+npm run build
 ```
 
 ### Environment Variable Issues
-- Ensure variables start with `VITE_` prefix
-- Restart development server after changes
-- Verify variables are set in production environment
+- Use the `NEXT_PUBLIC_` prefix for any variable needed in the browser (e.g. Supabase URL and anon key). Next.js inlines these at build time.
+- Restart development server after changes to `.env.local`
+- Verify variables are set in production environment (e.g. Vercel/Netlify dashboard)
 
 ### Supabase Connection Issues
 - Check API keys are correct
@@ -160,8 +137,8 @@ npm run build -- --force
 - Test connection in Supabase dashboard
 
 ### Routing Issues (404 errors)
-- Configure server to serve `index.html` for all routes
-- Check base URL configuration in `vite.config.js`
+- Ensure you are running `next start` (or your platform’s Next.js runtime) so the App Router can serve all routes
+- Do not deploy only the `.next` folder as static files; Next.js needs its server to handle routing
 
 ## Support and Updates
 

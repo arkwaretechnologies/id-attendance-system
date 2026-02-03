@@ -1,8 +1,9 @@
 # 🎓 ID Attendance System
 
-A comprehensive, modern web application for tracking student attendance using RFID technology. Built with React and Supabase for real-time data management and seamless user experience.
+A comprehensive, modern web application for tracking student attendance using RFID technology. Built with Next.js, React, and Supabase for real-time data management and seamless user experience.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
 ![React](https://img.shields.io/badge/React-18.0-blue.svg)
 ![Supabase](https://img.shields.io/badge/Supabase-Latest-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -36,10 +37,10 @@ A comprehensive, modern web application for tracking student attendance using RF
 ## 🏗️ Tech Stack
 
 ### Frontend
+- **Next.js 14** - React framework with App Router
 - **React 18** - Modern React with hooks and concurrent features
-- **React Router v6** - Client-side routing and navigation
 - **Lucide React** - Beautiful, customizable icons
-- **Custom CSS** - Responsive design with modern styling
+- **Tailwind CSS** - Utility-first styling
 
 ### Backend & Services
 - **Supabase** - Backend-as-a-Service with PostgreSQL
@@ -48,8 +49,9 @@ A comprehensive, modern web application for tracking student attendance using RF
 - **Row Level Security** - Database-level security policies
 
 ### Development Tools
-- **Vite** - Fast build tool and development server
-- **ESLint** - Code linting and quality assurance
+- **TypeScript** - Typed JavaScript for safer refactors and editor support
+- **Next.js** - Build tool, dev server, and routing
+- **ESLint** - Code linting (eslint-config-next)
 - **Modern JavaScript** - ES6+ features and best practices
 
 ## 🚀 Quick Start
@@ -74,12 +76,12 @@ A comprehensive, modern web application for tracking student attendance using RF
 
 3. **Environment setup**
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
    ```
-   Configure your Supabase credentials in the `.env` file:
+   Configure your Supabase credentials in `.env.local`:
    ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 4. **Database setup**
@@ -92,7 +94,7 @@ A comprehensive, modern web application for tracking student attendance using RF
    ```
 
 6. **Open your browser**
-   Navigate to `http://localhost:5173`
+   Navigate to `http://localhost:3000`
 
 ## 📖 Documentation
 
@@ -103,38 +105,35 @@ A comprehensive, modern web application for tracking student attendance using RF
 ## 🏛️ Project Structure
 
 ```
+app/                    # Next.js App Router
+├── layout.tsx         # Root layout and providers
+├── page.tsx           # Home (redirects to dashboard or login)
+├── globals.css        # Global styles
+├── login/
+├── dashboard/
+├── students/
+├── scanner/
+├── attendance/
+└── ...
 src/
-├── components/          # React components
-│   ├── AttendanceRecords.jsx
-│   ├── AttendanceScanner.jsx
-│   ├── Dashboard.jsx
-│   ├── Login.jsx
-│   ├── Navbar.jsx
-│   ├── NotificationSettings.jsx
-│   ├── Register.jsx
-│   └── StudentManagement.jsx
-├── contexts/           # React contexts
-│   └── AuthContext.jsx
-├── lib/               # Utilities and services
-│   ├── database.js
-│   ├── notificationService.js
-│   └── supabase.js
-├── App.jsx            # Main application component
-├── index.css          # Global styles
-└── main.jsx          # Application entry point
+├── components/        # React components (.tsx)
+├── contexts/          # Auth, Theme, Student contexts
+├── hooks/             # useAuth, useStudent
+├── lib/               # supabase, adminService, notificationService (.ts)
+└── types/             # Shared TypeScript types (database, auth, student)
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 ```env
-# Required - Supabase Configuration
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Required - Supabase (NEXT_PUBLIC_ exposes to browser)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Optional - Notification Services
-VITE_EMAIL_SERVICE_API_KEY=your_email_service_key
-VITE_SMS_SERVICE_API_KEY=your_sms_service_key
+NEXT_PUBLIC_EMAIL_SERVICE_API_KEY=your_email_service_key
+NEXT_PUBLIC_SEMAPHORE_API_KEY=your_sms_api_key
 ```
 
 ### Database Schema
@@ -197,7 +196,7 @@ For support and questions:
 
 ## 🙏 Acknowledgments
 
-- Built with [React](https://reactjs.org/)
+- Built with [Next.js](https://nextjs.org/) and [React](https://reactjs.org/)
 - Powered by [Supabase](https://supabase.com/)
 - Icons by [Lucide](https://lucide.dev/)
 - Inspired by modern educational technology needs
@@ -219,12 +218,14 @@ npm install
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Go to Project Settings > API
 3. Copy your Project URL and anon public key
-4. Update `src/lib/supabase.js` with your credentials:
+4. Create `.env.local` in the project root and set:
 
-```javascript
-const supabaseUrl = 'YOUR_SUPABASE_URL'
-const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+The app reads these at build time; do not commit `.env.local`.
 
 ### 3. Database Schema
 
@@ -408,14 +409,15 @@ The application uses custom CSS in `src/index.css`. You can:
 
 ```bash
 npm run build
+npm run start
 ```
 
 ### Deploy Options
 
-- **Vercel**: Connect your GitHub repository for automatic deployments
-- **Netlify**: Drag and drop the `dist` folder
-- **AWS S3**: Upload static files to S3 bucket
-- **Traditional Hosting**: Upload `dist` folder contents
+- **Vercel**: Recommended for Next.js; connect GitHub for automatic deployments
+- **Netlify**: Next.js runtime supported
+- **Docker / Node**: Run `npm run build && npm run start`
+- **Static Export**: Use `next export` if applicable for static hosting
 
 ## Support
 
