@@ -1,18 +1,17 @@
+'use client';
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import type { StudentProfile, Parent, Attendance } from '@/types/database';
 
 const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL';
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://localhost:54321';
 const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'public-anon-key';
 
-if (
-  supabaseUrl === 'YOUR_SUPABASE_URL' ||
-  supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY'
-) {
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   console.warn(
-    '⚠️ Supabase configuration missing! Please copy .env.example to .env and add your Supabase credentials.'
+    '⚠️ Supabase configuration missing! Please copy .env.example to .env.local and add your Supabase credentials.'
   );
 }
 

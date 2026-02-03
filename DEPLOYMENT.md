@@ -46,7 +46,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ### Optional Variables (for notifications)
 ```env
 NEXT_PUBLIC_EMAIL_SERVICE_API_KEY=your-email-api-key
-NEXT_PUBLIC_SEMAPHORE_API_KEY=your-sms-api-key
+SEMAPHORE_API_KEY=your-sms-api-key
 ```
 
 ## Supabase Production Setup

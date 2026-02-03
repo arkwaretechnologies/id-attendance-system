@@ -133,7 +133,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Optional - Notification Services
 NEXT_PUBLIC_EMAIL_SERVICE_API_KEY=your_email_service_key
-NEXT_PUBLIC_SEMAPHORE_API_KEY=your_sms_api_key
+
+# Optional - Semaphore SMS (server-only; used by Next.js API routes)
+SEMAPHORE_API_KEY=your_sms_api_key
 ```
 
 ### Database Schema
