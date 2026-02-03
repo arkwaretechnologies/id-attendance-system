@@ -74,7 +74,8 @@ web_modules/
 
 # Environment variable files (all)
 .env*
-*.env
+.env
+.env.example
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
