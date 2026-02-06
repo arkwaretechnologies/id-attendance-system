@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react'
-import { db } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import LoadingSpinner from './LoadingSpinner'
 import type { StudentProfile } from '@/types/database'
 import { Search, Tag, Users, AlertCircle, CheckCircle, X, Edit3, Trash2, Plus } from 'lucide-react'
 
 const RFIDManagement = () => {
+  const { schoolId } = useAuth()
   const [students, setStudents] = useState<StudentProfile[]>([])
   const [filteredStudents, setFilteredStudents] = useState<StudentProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,22 +29,19 @@ const RFIDManagement = () => {
 
   useEffect(() => {
     loadInitialData()
-  }, [])
+  }, [schoolId])
 
   useEffect(() => {
     loadStudents()
-  }, [searchTerm, filters])
+  }, [schoolId, searchTerm, filters])
 
   const loadInitialData = async () => {
     try {
-      // Load filter options
-      const [schoolYearsResult, gradeLevelsResult] = await Promise.all([
-        db.studentProfiles.getDistinctSchoolYears(),
-        db.studentProfiles.getDistinctGradeLevels()
-      ])
-
-      if (schoolYearsResult.data) setSchoolYears(schoolYearsResult.data.filter((s): s is string => s != null) as string[])
-      if (gradeLevelsResult.data) setGradeLevels(gradeLevelsResult.data.filter((s): s is string => s != null) as string[])
+      const res = await fetch('/api/students/filters', { credentials: 'include' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to load filters')
+      setSchoolYears(Array.isArray(data.schoolYears) ? data.schoolYears : [])
+      setGradeLevels(Array.isArray(data.gradeLevels) ? data.gradeLevels : [])
     } catch (err) {
       console.error('Error loading initial data:', err)
     }
@@ -52,12 +50,17 @@ const RFIDManagement = () => {
   const loadStudents = async () => {
     try {
       setLoading(true)
-      const { data, error } = await db.studentProfiles.searchForRfidAssignment(searchTerm, filters)
-      
-      if (error) throw error
-      
-      setStudents(data || [])
-      setFilteredStudents(data || [])
+      setError('')
+      const params = new URLSearchParams()
+      if (searchTerm.trim()) params.set('search', searchTerm.trim())
+      if (filters.schoolYear) params.set('schoolYear', filters.schoolYear)
+      if (filters.gradeLevel) params.set('gradeLevel', filters.gradeLevel)
+      const res = await fetch(`/api/students/rfid-search?${params.toString()}`, { credentials: 'include' })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error ?? 'Failed to load students')
+      const list = (result.students ?? []) as StudentProfile[]
+      setStudents(list)
+      setFilteredStudents(list)
     } catch (err) {
       setError('Failed to load students: ' + (err as Error).message)
     } finally {
@@ -106,15 +109,25 @@ const RFIDManagement = () => {
 
       // Check if RFID is already assigned to another student
       if (newRfId.trim() !== student.rfid_tag) {
-        const { data: existingStudent } = await db.studentProfiles.getByRfId(newRfId.trim())
-        const existing = existingStudent as StudentProfile | null
+        const checkRes = await fetch(
+          `/api/students/check-rfid?rfid=${encodeURIComponent(newRfId.trim())}`,
+          { credentials: 'include' }
+        )
+        const checkData = await checkRes.json()
+        const existing = checkData.student as { id: string; first_name?: string; last_name?: string } | null
         if (existing && existing.id !== student.id) {
-          throw new Error(`RFID ${newRfId} is already assigned to ${existing.first_name} ${existing.last_name}`)
+          throw new Error(`RFID ${newRfId} is already assigned to ${existing.first_name ?? ''} ${existing.last_name ?? ''}`)
         }
       }
 
-      const { error } = await db.studentProfiles.updateRfId(student.id, newRfId.trim())
-      if (error) throw error
+      const patchRes = await fetch(`/api/students/${student.id}/rfid`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ rfid_tag: newRfId.trim() }),
+      })
+      const patchData = await patchRes.json()
+      if (!patchRes.ok) throw new Error(patchData.error ?? 'Failed to update RFID')
 
       setSuccess(`RFID successfully ${student.rfid_tag ? 'updated' : 'assigned'} for ${student.first_name} ${student.last_name}`)
       closeAssignModal()
@@ -134,9 +147,14 @@ const RFIDManagement = () => {
     try {
       setError('')
       setSuccess('')
-      
-      const { error } = await db.studentProfiles.removeRfId(student.id)
-      if (error) throw error
+      const res = await fetch(`/api/students/${student.id}/rfid`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ rfid_tag: null }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to remove RFID')
 
       setSuccess(`RFID tag removed from ${student.first_name} ${student.last_name}`)
       loadStudents() // Refresh the list

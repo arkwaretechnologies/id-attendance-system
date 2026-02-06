@@ -13,11 +13,24 @@ export interface StudentProfile {
   sex?: string | null;
   school_year?: string | null;
   grade_level?: string | null;
+  school_id?: number | null;
   rfid_tag?: string | null;
   created_at?: string | null;
   email_address?: string | null;
+  phone_number?: string | null;
   last_grade_level_completed?: string | null;
   parent_email?: string | null;
+  father_last_name?: string | null;
+  father_first_name?: string | null;
+  father_middle_name?: string | null;
+  father_contact_number?: string | null;
+  mother_last_name?: string | null;
+  mother_first_name?: string | null;
+  mother_middle_name?: string | null;
+  mother_contact_number?: string | null;
+  guardian_last_name?: string | null;
+  guardian_first_name?: string | null;
+  guardian_middle_name?: string | null;
   guardian_contact_number?: string | null;
   [key: string]: unknown;
 }

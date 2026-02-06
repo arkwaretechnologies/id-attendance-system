@@ -12,7 +12,7 @@
     --color-primary: #6366F1;
     --color-secondary: #EC4899;
     --color-background: #F9FAFB;
-    --color-text: #090d11;
+    --color-text: #000000;
     --color-card: #FFFFFF;
     --color-border: #E5E7EB;
     --color-bg-primary: #FFFFFF;
@@ -54,6 +54,18 @@
     max-width: 100%;
   }
 
+  /* Light mode: force all text to black (only when .dark is not applied) */
+  html:not(.dark) body {
+    color: #000000;
+  }
+  html:not(.dark) [class*="text-gray"] {
+    color: #000000 !important;
+  }
+  html:not(.dark) .form-input,
+  html:not(.dark) .edit-modal-input {
+    color: #111827;
+  }
+
   /* Fluid container base (overridden by breakpoints) */
   .container {
     width: 100%;
@@ -87,6 +99,33 @@
 
 .dark .form-label {
   @apply text-gray-300;
+}
+
+/* Edit Student modal: ensure white background and visible text in light mode */
+.edit-student-modal {
+  background-color: #ffffff;
+}
+
+.dark .edit-student-modal {
+  background-color: var(--color-card);
+}
+
+.edit-student-modal .edit-modal-input {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.dark .edit-student-modal .edit-modal-input {
+  background-color: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+/* Enroll page: smaller placeholder text so it fits in input boxes */
+.enrollment-page input::placeholder,
+.enrollment-page textarea::placeholder {
+  font-size: 0.75rem;
 }
 
 /* Topbar Styles */

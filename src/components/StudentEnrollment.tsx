@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useStudent } from '@/hooks/useStudent';
 import { User, Mail, Calendar, MapPin, Phone, GraduationCap, Users } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface StudentEnrollmentProps {
 }
 
 const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
+  const { schoolId } = useAuth();
   const { createStudent, loading: contextLoading, error: contextError } = useStudent();
   
   const [localError, setLocalError] = useState('');
@@ -210,6 +212,7 @@ const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
         // Enrollment Information
         school_year: formData.schoolYear,
         grade_level: formData.gradeLevel,
+        school_id: schoolId ?? null,
         with_lrn: formData.withLRN,
         returning_student: formData.returningStudent,
         // Learner Information
@@ -274,7 +277,7 @@ const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 py-8">
+    <div className="enrollment-page min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="rounded-xl shadow-lg overflow-hidden" style={{backgroundColor: 'var(--color-bg-primary)'}}>
           <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-8">

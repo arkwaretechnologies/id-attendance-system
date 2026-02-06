@@ -53,6 +53,8 @@ export const auth = {
 interface StudentProfileFilters {
   schoolYear?: string;
   gradeLevel?: string;
+  /** When set, only rows with this school_id are returned. */
+  schoolId?: number | null;
 }
 
 interface Pagination {
@@ -134,6 +136,9 @@ export const db = {
       if (filters.gradeLevel) {
         query = query.eq('grade_level', filters.gradeLevel);
       }
+      if (filters.schoolId != null) {
+        query = query.eq('school_id', filters.schoolId);
+      }
 
       if (pagination.page != null && pagination.pageSize != null) {
         const from = (pagination.page - 1) * pagination.pageSize;
@@ -145,12 +150,16 @@ export const db = {
       return { data, error, count };
     },
 
-    getDistinctSchoolYears: async () => {
-      const { data, error } = await supabase
+    getDistinctSchoolYears: async (schoolId?: number | null) => {
+      let query = supabase
         .from('student_profile')
         .select('school_year')
         .not('school_year', 'is', null)
         .order('school_year', { ascending: false });
+      if (schoolId != null) {
+        query = query.eq('school_id', schoolId);
+      }
+      const { data, error } = await query;
 
       if (error) return { data: [] as string[], error };
       const rows = (data ?? []) as { school_year?: string }[];
@@ -158,12 +167,16 @@ export const db = {
       return { data: uniqueYears, error: null };
     },
 
-    getDistinctGradeLevels: async () => {
-      const { data, error } = await supabase
+    getDistinctGradeLevels: async (schoolId?: number | null) => {
+      let query = supabase
         .from('student_profile')
         .select('grade_level')
         .not('grade_level', 'is', null)
         .order('grade_level', { ascending: true });
+      if (schoolId != null) {
+        query = query.eq('school_id', schoolId);
+      }
+      const { data, error } = await query;
 
       if (error) return { data: [] as string[], error };
       const rows = (data ?? []) as { grade_level?: string }[];
@@ -211,6 +224,9 @@ export const db = {
       }
       if (filters.gradeLevel) {
         query = query.eq('grade_level', filters.gradeLevel);
+      }
+      if (filters.schoolId != null) {
+        query = query.eq('school_id', filters.schoolId);
       }
 
       const { data, error } = await query;
