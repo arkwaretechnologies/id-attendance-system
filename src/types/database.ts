@@ -68,10 +68,90 @@ export interface GetUsersWithRolesRow {
 export interface UserRoleRow {
   user_id: string;
   role: string;
+  school_id?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
   [key: string]: unknown;
 }
+
+export interface School {
+  school_id: number;
+  school_name?: string | null;
+  head?: string | null;
+  position?: string | null;
+  address?: string | null;
+  created_at?: string | null;
+  [key: string]: unknown;
+}
+
+/** Row from public.users (custom auth table). */
+export interface PublicUser {
+  user_id: number;
+  username: string;
+  password_hash: string;
+  fullname: string;
+  role: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  school_id: number | null;
+  email_address: string | null;
+  contact_no: string | null;
+  [key: string]: unknown;
+}
+
+/** User list item from API (public.users without password_hash). */
+export interface PublicUserListItem {
+  user_id: number;
+  username: string;
+  fullname: string;
+  role: string;
+  school_id: number | null;
+  email_address: string | null;
+  contact_no: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Row from public.role. */
+export interface Role {
+  role_id: number;
+  name: string;
+  description: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+/** Row from public.role_page. */
+export interface RolePage {
+  role_id: number;
+  page_key: string;
+  [key: string]: unknown;
+}
+
+/** Role with its page_keys for API responses. */
+export interface RoleWithPages {
+  role_id: number;
+  name: string;
+  description: string | null;
+  page_keys: string[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/** Page keys that can be assigned to roles (must match route paths). */
+export const PAGE_KEYS = [
+  'dashboard',
+  'students',
+  'rfid',
+  'scanner',
+  'attendance',
+  'notifications',
+  'users',
+  'roles',
+  'enroll',
+] as const;
+export type PageKey = (typeof PAGE_KEYS)[number];
 
 /**
  * Minimal Supabase Database type for typed client.
@@ -99,6 +179,26 @@ export interface Database {
         Row: UserRoleRow;
         Insert: Partial<UserRoleRow>;
         Update: Partial<UserRoleRow>;
+      };
+      school: {
+        Row: School;
+        Insert: Partial<School>;
+        Update: Partial<School>;
+      };
+      users: {
+        Row: PublicUser;
+        Insert: Partial<PublicUser>;
+        Update: Partial<PublicUser>;
+      };
+      role: {
+        Row: Role;
+        Insert: Partial<Role>;
+        Update: Partial<Role>;
+      };
+      role_page: {
+        Row: RolePage;
+        Insert: Partial<RolePage>;
+        Update: Partial<RolePage>;
       };
     };
     Functions: {

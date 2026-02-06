@@ -18,10 +18,12 @@ import {
   X,
   Sun,
   Moon,
+  Shield,
 } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, allowedPages, signOut } = useAuth();
+  const can = (pageKey: string) => allowedPages.length === 0 || allowedPages.includes(pageKey);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -61,7 +63,7 @@ export default function Navbar() {
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
-            <span className="user-email">{user?.email}</span>
+            <span className="user-email">{user?.email ?? user?.username}</span>
           </div>
         </div>
       </div>
@@ -79,55 +81,81 @@ export default function Navbar() {
         </div>
 
         <div className="sidebar-nav">
-          <Link
-            href="/dashboard"
-            className={isActive('/dashboard') || isActive('/')}
-            onClick={closeSidebar}
-          >
-            <Home size={20} />
-            <span>Dashboard</span>
-          </Link>
+          {can('dashboard') && (
+            <Link
+              href="/dashboard"
+              className={isActive('/dashboard') || isActive('/')}
+              onClick={closeSidebar}
+            >
+              <Home size={20} />
+              <span>Dashboard</span>
+            </Link>
+          )}
 
-          <Link href="/students" className={isActive('/students')} onClick={closeSidebar}>
-            <Users size={20} />
-            <span>Students</span>
-          </Link>
+          {can('students') && (
+            <Link href="/students" className={isActive('/students')} onClick={closeSidebar}>
+              <Users size={20} />
+              <span>Students</span>
+            </Link>
+          )}
 
-          <Link href="/rfid" className={isActive('/rfid')} onClick={closeSidebar}>
-            <Tag size={20} />
-            <span>RFID Management</span>
-          </Link>
+          {can('rfid') && (
+            <Link href="/rfid" className={isActive('/rfid')} onClick={closeSidebar}>
+              <Tag size={20} />
+              <span>RFID Management</span>
+            </Link>
+          )}
 
-          <Link href="/scanner" className={isActive('/scanner')} onClick={closeSidebar}>
-            <Scan size={20} />
-            <span>Scanner</span>
-          </Link>
+          {can('scanner') && (
+            <Link href="/scanner" className={isActive('/scanner')} onClick={closeSidebar}>
+              <Scan size={20} />
+              <span>Scanner</span>
+            </Link>
+          )}
 
-          <Link href="/attendance" className={isActive('/attendance')} onClick={closeSidebar}>
-            <FileText size={20} />
-            <span>Records</span>
-          </Link>
+          {can('attendance') && (
+            <Link href="/attendance" className={isActive('/attendance')} onClick={closeSidebar}>
+              <FileText size={20} />
+              <span>Records</span>
+            </Link>
+          )}
 
-          <Link
-            href="/notifications"
-            className={isActive('/notifications')}
-            onClick={closeSidebar}
-          >
-            <Bell size={20} />
-            <span>Notifications</span>
-          </Link>
+          {can('notifications') && (
+            <Link
+              href="/notifications"
+              className={isActive('/notifications')}
+              onClick={closeSidebar}
+            >
+              <Bell size={20} />
+              <span>Notifications</span>
+            </Link>
+          )}
 
-          {userRole === 'admin' && (
+          {can('users') && (
             <Link href="/users" className={isActive('/users')} onClick={closeSidebar}>
               <Settings size={20} />
               <span>User Management</span>
+            </Link>
+          )}
+
+          {can('roles') && (
+            <Link href="/roles" className={isActive('/roles')} onClick={closeSidebar}>
+              <Shield size={20} />
+              <span>Role Management</span>
+            </Link>
+          )}
+
+          {can('enroll') && (
+            <Link href="/enroll" className={isActive('/enroll')} onClick={closeSidebar}>
+              <Users size={20} />
+              <span>Enroll</span>
             </Link>
           )}
         </div>
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
-            <span className="sidebar-user-email">{user?.email}</span>
+            <span className="sidebar-user-email">{user?.email ?? user?.username}</span>
           </div>
           <button onClick={handleSignOut} className="sidebar-logout-btn">
             <LogOut size={20} />

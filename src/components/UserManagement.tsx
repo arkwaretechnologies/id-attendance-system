@@ -1,85 +1,84 @@
 'use client';
 
 import React, { useState, useEffect } from 'react'
-import { Users, Plus, Trash2, Edit, Shield, Mail, Lock, User } from 'lucide-react'
-import { getUsersWithRoles, getPublicUsers, createUserAccount, deleteUserAccount, updateUserRole, updateUserPassword, updateUserMetadata, updateUserEmail, assignAdminRoleToCurrentUser } from '@/lib/adminService'
+import { Users, Plus, Trash2, Edit, Shield, Mail, Lock, User, Phone } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import type { GetUsersWithRolesRow } from '@/types/database'
+import type { PublicUserListItem } from '@/types/database'
 
 const UserManagement = () => {
-  const [users, setUsers] = useState<GetUsersWithRolesRow[]>([])
+  const [users, setUsers] = useState<PublicUserListItem[]>([])
+  const [roleOptions, setRoleOptions] = useState<string[]>(['admin', 'reviewer'])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
-  const [editingUser, setEditingUser] = useState<GetUsersWithRolesRow | null>(null)
+  const [editingUser, setEditingUser] = useState<PublicUserListItem | null>(null)
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
-    role: 'user',
-    fullName: ''
+    fullName: '',
+    role: 'reviewer',
+    email_address: '',
+    contact_no: ''
   })
   const [editFormData, setEditFormData] = useState({
-    role: 'user',
     fullName: '',
-    email: '',
+    role: 'reviewer',
+    email_address: '',
+    contact_no: '',
     password: ''
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const { user, isAdmin, userRole, refreshUserRole } = useAuth()
+  const { user, isAdmin } = useAuth()
 
   useEffect(() => {
     fetchUsers()
   }, [])
 
+  useEffect(() => {
+    fetch('/api/roles', { credentials: 'include' })
+      .then((res) => res.ok ? res.json() : { roles: [] })
+      .then((data) => {
+        const names = (data.roles ?? []).map((r: { name: string }) => r.name)
+        if (names.length > 0) setRoleOptions(names)
+      })
+      .catch(() => {})
+  }, [])
 
 
-  // Validation functions
-  const validateCreateForm = (data: { fullName: string; email: string; password: string }) => {
+
+  const validateCreateForm = (data: { username: string; fullName: string; password: string }) => {
     const errors: Record<string, string> = {};
-    
+    if (!data.username.trim()) {
+      errors.username = 'Username is required';
+    } else if (data.username.trim().length < 2) {
+      errors.username = 'Username must be at least 2 characters';
+    }
     if (!data.fullName.trim()) {
       errors.fullName = 'Full name is required';
     } else if (data.fullName.trim().length < 2) {
       errors.fullName = 'Full name must be at least 2 characters';
     }
-    
-    if (!data.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-    
     if (!data.password.trim()) {
       errors.password = 'Password is required';
     } else if (data.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
     return errors;
   };
-  
-  const validateEditForm = (data: { fullName: string; email: string; password?: string }) => {
+
+  const validateEditForm = (data: { fullName: string; password?: string }) => {
     const errors: Record<string, string> = {};
-    
     if (!data.fullName.trim()) {
       errors.fullName = 'Full name is required';
     } else if (data.fullName.trim().length < 2) {
       errors.fullName = 'Full name must be at least 2 characters';
     }
-    
-    if (!data.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-    
-    if (data.password && data.password.length < 6) {
+    if (data.password && data.password.length > 0 && data.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
     return errors;
   };
 
@@ -87,31 +86,14 @@ const UserManagement = () => {
     try {
       setLoading(true)
       setError('')
-      let data, error
-
-      if (isAdmin()) {
-        // Try admin RPC first
-        let adminRes = await getUsersWithRoles()
-        if (adminRes?.error) {
-          console.warn('Admin fetch failed, falling back to public users:', adminRes.error)
-          // Fallback to public users list (SECURITY DEFINER)
-          const publicRes = await getPublicUsers()
-          if (publicRes.error) {
-            setError('Failed to fetch users: ' + (publicRes.error instanceof Error ? publicRes.error.message : String(publicRes.error)))
-            return
-          }
-          setUsers((publicRes.data ?? []) as GetUsersWithRolesRow[])
-          return
-        }
-        setUsers(adminRes.data || [])
-      } else {
-        ({ data, error } = await getPublicUsers())
-        if (error) {
-          setError('Failed to fetch users: ' + (error instanceof Error ? error.message : String(error)))
-          return
-        }
-        setUsers((data ?? []) as GetUsersWithRolesRow[])
+      const res = await fetch('/api/users', { credentials: 'include' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? 'Failed to fetch users')
+        return
       }
+      const data = await res.json()
+      setUsers(data.users ?? [])
     } catch (err) {
       setError('An error occurred while fetching users')
       console.error('Error fetching users:', err)
@@ -122,227 +104,145 @@ const UserManagement = () => {
 
   const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Validate form
-    const errors = validateCreateForm(formData);
+    const errors = validateCreateForm({
+      username: formData.username,
+      fullName: formData.fullName,
+      password: formData.password,
+    });
     setFormErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(errors).length > 0) return;
+
+    const existingUser = users.find(
+      (u) => u.username.toLowerCase() === formData.username.trim().toLowerCase()
+    );
+    if (existingUser) {
+      setFormErrors({ username: 'A user with this username already exists' });
       return;
     }
-    
+
     try {
       setLoading(true);
       setError('');
       setSuccess('');
-      
-      // Check if email already exists
-      const existingUser = users.find(u => u.email?.toLowerCase() === formData.email.toLowerCase());
-      if (existingUser) {
-        setFormErrors({ email: 'A user with this email already exists' });
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: formData.username.trim(),
+          password: formData.password,
+          fullname: formData.fullName.trim(),
+          role: formData.role,
+          email_address: formData.email_address.trim() || null,
+          contact_no: formData.contact_no.trim() || null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to create user');
         return;
       }
-      
-      const result = await createUserAccount(
-        formData.email,
-        formData.password,
-        formData.role,
-        formData.fullName
-      );
-      
-      if (result.error) {
-        // Provide a clearer message for missing admin API setup
-        const msg = (result.error instanceof Error ? result.error.message : String(result.error)) || 'Failed to create user'
-        if (msg.includes('Admin API not configured') || msg.includes('not allowed')) {
-          setError('User creation requires a secure admin backend. Please run database/admin-setup.sql in Supabase, then configure a serverless function with the service role key to create users, or enable user self-signup and assign roles via Update Role.');
-        } else {
-          setError(msg)
-        }
-        return;
-      }
-      
-      // Update role if not default 'user' (only when creation succeeded)
-      if (result?.data?.user?.id && formData.role !== 'user') {
-        const roleResult = await updateUserRole(result.data.user.id, formData.role);
-        if (roleResult.error) {
-          console.warn('User created but role update failed:', roleResult.error);
-          setError('User created but role assignment failed. Please update the role manually.');
-        }
-      }
-      
-      if (result?.data?.user) {
-        setSuccess('User created successfully!');
-        setFormData({ fullName: '', email: '', password: '', role: 'user' });
-        setFormErrors({});
-        setShowCreateForm(false);
-        fetchUsers();
-      }
+      setSuccess('User created successfully!');
+      setFormData({
+        username: '',
+        password: '',
+        fullName: '',
+        role: roleOptions[0] ?? 'reviewer',
+        email_address: '',
+        contact_no: '',
+      });
+      setFormErrors({});
+      setShowCreateForm(false);
+      fetchUsers();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create user';
-      if (errorMessage.includes('email')) {
-        setFormErrors({ email: 'This email is already registered' });
-      } else {
-        setError(errorMessage);
-      }
+      setError(err instanceof Error ? err.message : 'Failed to create user');
       console.error('Error creating user:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async (userId: number) => {
     if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      return
+      return;
     }
-    
     try {
-      setLoading(true)
-      setError('')
-      
-      const { success, error } = await deleteUserAccount(userId)
-      
-      if (!success) {
-        setError('Failed to delete user: ' + (error instanceof Error ? error.message : String(error)))
-        return
+      setLoading(true);
+      setError('');
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to delete user');
+        return;
       }
-      
-      setSuccess('User deleted successfully!')
-      fetchUsers()
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000)
+      setSuccess('User deleted successfully!');
+      fetchUsers();
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('An error occurred while deleting user')
-      console.error('Error deleting user:', err)
+      setError('An error occurred while deleting user');
+      console.error('Error deleting user:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleEditUser = (userData: GetUsersWithRolesRow) => {
-    setEditingUser(userData)
-    const metadata = userData.user_metadata as { full_name?: string } | undefined
+  const handleEditUser = (userData: PublicUserListItem) => {
+    setEditingUser(userData);
     setEditFormData({
-      role: (userData.role ?? 'user') as string,
-      fullName: metadata?.full_name ?? '',
-      email: userData.email ?? '',
-      password: ''
-    })
-    setShowEditForm(true)
-    setError('')
-    setSuccess('')
-  }
+      fullName: userData.fullname,
+      role: userData.role ?? roleOptions[0] ?? 'reviewer',
+      email_address: userData.email_address ?? '',
+      contact_no: userData.contact_no ?? '',
+      password: '',
+    });
+    setShowEditForm(true);
+    setError('');
+    setSuccess('');
+  };
 
   const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Validate form
-    const errors = validateEditForm(editFormData);
+    const errors = validateEditForm({
+      fullName: editFormData.fullName,
+      password: editFormData.password,
+    });
     setEditFormErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
+    if (Object.keys(errors).length > 0) return;
     if (!editingUser) return;
 
     try {
       setLoading(true);
       setError('');
       setSuccess('');
-      
-      const userId = editingUser.id;
-      const currentRole = editingUser.role;
-      const editMeta = editingUser.user_metadata as { full_name?: string } | undefined;
-      const currentFullName = editMeta?.full_name;
-      const currentEmail = editingUser.email ?? '';
-      
-      // Check if email already exists (excluding current user)
-      if (editFormData.email !== currentEmail) {
-        const existingUser = users.find(u => 
-          (u.email ?? '').toLowerCase() === editFormData.email.toLowerCase() && u.id !== userId
-        );
-        if (existingUser) {
-          setEditFormErrors({ email: 'A user with this email already exists' });
-          return;
-        }
-      }
-      
-      let updateCount = 0;
-      const errors = [];
-      
-      // Update role if changed
-      if (editFormData.role !== currentRole) {
-        try {
-          const roleResult = await updateUserRole(userId, editFormData.role);
-          if (roleResult.error) {
-            errors.push('Failed to update user role');
-          } else {
-            updateCount++;
-          }
-        } catch (err) {
-          errors.push('Failed to update user role');
-        }
-      }
-      
-      // Update metadata (full name) if changed
-      if (editFormData.fullName !== currentFullName) {
-        try {
-          const metadataResult = await updateUserMetadata(userId, {
-            full_name: editFormData.fullName
-          });
-          if (metadataResult.error) {
-            errors.push('Failed to update user name');
-          } else {
-            updateCount++;
-          }
-        } catch (err) {
-          errors.push('Failed to update user name');
-        }
-      }
-      
-      // Update email if changed
-      if (editFormData.email !== currentEmail) {
-        try {
-          const emailResult = await updateUserEmail(userId, editFormData.email);
-          if (emailResult.error) {
-            errors.push('Failed to update user email');
-          } else {
-            updateCount++;
-          }
-        } catch (err) {
-          errors.push('Failed to update user email');
-        }
-      }
-      
-      // Update password if provided
+      const body: Record<string, unknown> = {
+        fullname: editFormData.fullName.trim(),
+        role: editFormData.role,
+        email_address: editFormData.email_address.trim() || null,
+        contact_no: editFormData.contact_no.trim() || null,
+      };
       if (editFormData.password && editFormData.password.trim()) {
-        try {
-          const passwordResult = await updateUserPassword(userId, editFormData.password);
-          if (passwordResult.error) {
-            errors.push('Failed to update user password');
-          } else {
-            updateCount++;
-          }
-        } catch (err) {
-          errors.push('Failed to update user password');
-        }
+        body.password = editFormData.password;
       }
-      
-      if (errors.length > 0) {
-        setError(`Some updates failed: ${errors.join(', ')}`);
-      } else if (updateCount > 0) {
-        setSuccess('User updated successfully!');
-      } else {
-        setSuccess('No changes were made.');
+      const res = await fetch(`/api/users/${editingUser.user_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to update user');
+        return;
       }
-      
+      setSuccess('User updated successfully!');
       setEditingUser(null);
-      setEditFormData({ fullName: '', email: '', role: 'user', password: '' });
+      setEditFormData({ fullName: '', role: 'reviewer', email_address: '', contact_no: '', password: '' });
       setEditFormErrors({});
       setShowEditForm(false);
       fetchUsers();
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update user');
@@ -350,34 +250,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }
-
-  const handleAssignAdminRole = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      setSuccess('');
-      
-      const result = await assignAdminRoleToCurrentUser();
-      
-      if (result.success) {
-        setSuccess('Admin role assigned successfully! The page will refresh automatically.');
-        // Refresh user role
-        await refreshUserRole();
-        // Small delay to ensure the role is updated
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        setError((result.error instanceof Error ? result.error.message : result.error ? String(result.error) : null) || 'Failed to assign admin role');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign admin role');
-      console.error('Error assigning admin role:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -388,19 +261,6 @@ const UserManagement = () => {
             User Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-lg">Manage system users and their permissions</p>
-
-          {!isAdmin() && (
-            <div className="mt-2">
-              <button
-                onClick={handleAssignAdminRole}
-                disabled={loading}
-                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 shadow-sm disabled:opacity-50"
-              >
-                <Shield size={16} />
-                {loading ? 'Assigning...' : 'Assign Admin Role (Initial Setup)'}
-              </button>
-            </div>
-          )}
         </div>
         {isAdmin() && (
         <button
@@ -439,6 +299,30 @@ const UserManagement = () => {
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <User size={16} className="text-gray-500" />
+                  Username
+                </label>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                    formErrors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  value={formData.username}
+                  onChange={(e) => {
+                    setFormData({ ...formData, username: e.target.value });
+                    if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
+                  }}
+                  placeholder="Enter username"
+                  required
+                />
+                {formErrors.username && (
+                  <div className="text-red-600 text-sm">{formErrors.username}</div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <User size={16} className="text-gray-500" />
                   Full Name
                 </label>
                 <input
@@ -449,40 +333,13 @@ const UserManagement = () => {
                   value={formData.fullName}
                   onChange={(e) => {
                     setFormData({ ...formData, fullName: e.target.value });
-                    if (formErrors.fullName) {
-                      setFormErrors({...formErrors, fullName: ''});
-                    }
+                    if (formErrors.fullName) setFormErrors({ ...formErrors, fullName: '' });
                   }}
                   placeholder="Enter full name"
                   required
                 />
                 {formErrors.fullName && (
                   <div className="text-red-600 text-sm">{formErrors.fullName}</div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <Mail size={16} className="text-gray-500" />
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
-                    formErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData({ ...formData, email: e.target.value });
-                    if (formErrors.email) {
-                      setFormErrors({...formErrors, email: ''});
-                    }
-                  }}
-                  placeholder="Enter email address"
-                  required
-                />
-                {formErrors.email && (
-                  <div className="text-red-600 text-sm">{formErrors.email}</div>
                 )}
               </div>
             </div>
@@ -495,15 +352,14 @@ const UserManagement = () => {
                 </label>
                 <input
                   type="password"
+                  autoComplete="new-password"
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
                     formErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   value={formData.password}
                   onChange={(e) => {
                     setFormData({ ...formData, password: e.target.value });
-                    if (formErrors.password) {
-                      setFormErrors({...formErrors, password: ''});
-                    }
+                    if (formErrors.password) setFormErrors({ ...formErrors, password: '' });
                   }}
                   placeholder="Enter password (min. 6 characters)"
                   required
@@ -524,9 +380,39 @@ const UserManagement = () => {
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {roleOptions.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <Mail size={16} className="text-gray-500" />
+                  Email Address (optional)
+                </label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  value={formData.email_address}
+                  onChange={(e) => setFormData({ ...formData, email_address: e.target.value })}
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <Phone size={16} className="text-gray-500" />
+                  Contact No. (optional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  value={formData.contact_no}
+                  onChange={(e) => setFormData({ ...formData, contact_no: e.target.value })}
+                  placeholder="Enter contact number"
+                />
               </div>
             </div>
 
@@ -535,10 +421,10 @@ const UserManagement = () => {
                 type="button"
                 className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:ring-2 focus:ring-gray-200 transition-colors font-medium"
                 onClick={() => {
-                  setShowCreateForm(false)
-                  setFormData({ email: '', password: '', role: 'user', fullName: '' })
-                  setFormErrors({})
-                  setError('')
+                  setShowCreateForm(false);
+                  setFormData({ username: '', password: '', fullName: '', role: roleOptions[0] ?? 'reviewer', email_address: '', contact_no: '' });
+                  setFormErrors({});
+                  setError('');
                 }}
               >
                 Cancel
@@ -560,7 +446,7 @@ const UserManagement = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 mb-8">
           <div className="flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white mb-6">
             <Edit size={20} className="text-blue-600" />
-            Edit User: {editingUser.email}
+            Edit User: {editingUser.username}
           </div>
           
           <form onSubmit={handleUpdateUser}>
@@ -578,9 +464,7 @@ const UserManagement = () => {
                   value={editFormData.fullName}
                   onChange={(e) => {
                     setEditFormData({ ...editFormData, fullName: e.target.value });
-                    if (editFormErrors.fullName) {
-                      setEditFormErrors({...editFormErrors, fullName: ''});
-                    }
+                    if (editFormErrors.fullName) setEditFormErrors({ ...editFormErrors, fullName: '' });
                   }}
                   placeholder="Enter full name"
                   required
@@ -593,30 +477,33 @@ const UserManagement = () => {
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <Mail size={16} className="text-gray-500" />
-                  Email Address
+                  Email Address (optional)
                 </label>
                 <input
                   type="email"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
-                    editFormErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  value={editFormData.email}
-                  onChange={(e) => {
-                    setEditFormData({ ...editFormData, email: e.target.value });
-                    if (editFormErrors.email) {
-                      setEditFormErrors({...editFormErrors, email: ''});
-                    }
-                  }}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  value={editFormData.email_address}
+                  onChange={(e) => setEditFormData({ ...editFormData, email_address: e.target.value })}
                   placeholder="Enter email address"
-                  required
                 />
-                {editFormErrors.email && (
-                  <div className="text-red-600 text-sm">{editFormErrors.email}</div>
-                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <Phone size={16} className="text-gray-500" />
+                  Contact No. (optional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  value={editFormData.contact_no}
+                  onChange={(e) => setEditFormData({ ...editFormData, contact_no: e.target.value })}
+                  placeholder="Enter contact number"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <Lock size={16} className="text-gray-500" />
@@ -624,24 +511,25 @@ const UserManagement = () => {
                 </label>
                 <input
                   type="password"
+                  autoComplete="new-password"
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
                     editFormErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   value={editFormData.password}
                   onChange={(e) => {
                     setEditFormData({ ...editFormData, password: e.target.value });
-                    if (editFormErrors.password) {
-                      setEditFormErrors({...editFormErrors, password: ''});
-                    }
+                    if (editFormErrors.password) setEditFormErrors({ ...editFormErrors, password: '' });
                   }}
-                  placeholder="Enter new password (leave blank to keep current)"
+                  placeholder="Leave blank to keep current password"
                   minLength={6}
                 />
                 {editFormErrors.password && (
                   <div className="text-red-600 text-sm">{editFormErrors.password}</div>
                 )}
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <Shield size={16} className="text-gray-500" />
@@ -652,8 +540,9 @@ const UserManagement = () => {
                   value={editFormData.role}
                   onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {roleOptions.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -663,11 +552,11 @@ const UserManagement = () => {
                 type="button"
                 className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:ring-2 focus:ring-gray-200 transition-colors font-medium"
                 onClick={() => {
-                  setShowEditForm(false)
-                  setEditingUser(null)
-                  setEditFormData({ role: 'user', fullName: '', email: '', password: '' })
-                  setEditFormErrors({})
-                  setError('')
+                  setShowEditForm(false);
+                  setEditingUser(null);
+                  setEditFormData({ role: roleOptions[0] ?? 'reviewer', fullName: '', email_address: '', contact_no: '', password: '' });
+                  setEditFormErrors({});
+                  setError('');
                 }}
               >
                 Cancel
@@ -705,70 +594,76 @@ const UserManagement = () => {
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">User</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Created</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{isAdmin() ? 'Actions' : ''}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                 {users.map((userData) => {
-                  const meta = userData.user_metadata as { full_name?: string } | undefined;
-                  const fullName = meta?.full_name ?? 'N/A';
-                  const initials = fullName !== 'N/A' 
+                  const fullName = userData.fullname || 'N/A';
+                  const initials = fullName !== 'N/A'
                     ? fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
                     : 'NA';
-                  
+                  const isCurrentUser = user?.user_id === userData.user_id;
                   return (
-                    <tr key={userData.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <tr key={userData.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-4">
                           <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                             {initials}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate" style={{color: 'var(--color-text)'}}>{fullName}</div>
-                            <div className="text-muted">{userData.email}</div>
+                            <div className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>{fullName}</div>
+                            <div className="text-muted">{userData.username}</div>
+                            {userData.email_address && (
+                              <div className="text-muted text-xs">{userData.email_address}</div>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`role-badge ${
-                          userData.role === 'admin' 
-                            ? 'role-badge-admin' 
-                            : 'role-badge-user'
+                          userData.role === 'admin' ? 'role-badge-admin' : 'role-badge-user'
                         }`}>
-                          {userData.role || 'user'}
+                          {userData.role || 'reviewer'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
+                        <span className="text-muted">{userData.contact_no || '—'}</span>
+                      </td>
+                      <td className="px-6 py-4">
                         <span className="text-muted">
-                          {new Date((userData.created_at as string) ?? '').toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          {userData.created_at
+                            ? new Date(userData.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })
+                            : '—'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         {isAdmin() && (
-                        <div className="flex space-x-2">
-                          <button
-                            className="btn-action btn-action-primary"
-                            onClick={() => handleEditUser(userData)}
-                          >
-                            <Edit size={12} />
-                            Edit
-                          </button>
-                          <button
-                            className="btn-action btn-action-danger"
-                            onClick={() => handleDeleteUser(userData.id)}
-                            disabled={userData.id === user?.id}
-                            title={userData.id === user?.id ? 'Cannot delete yourself' : 'Delete user'}
-                          >
-                            <Trash2 size={12} />
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                          <div className="flex space-x-2">
+                            <button
+                              className="btn-action btn-action-primary"
+                              onClick={() => handleEditUser(userData)}
+                            >
+                              <Edit size={12} />
+                              Edit
+                            </button>
+                            <button
+                              className="btn-action btn-action-danger"
+                              onClick={() => handleDeleteUser(userData.user_id)}
+                              disabled={isCurrentUser}
+                              title={isCurrentUser ? 'Cannot delete yourself' : 'Delete user'}
+                            >
+                              <Trash2 size={12} />
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

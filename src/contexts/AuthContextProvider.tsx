@@ -2,174 +2,174 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getCurrentUserRole } from '@/lib/adminService';
 import { AuthContext } from './AuthContext';
-import type { User, Session } from '@supabase/supabase-js';
-import type { AuthContextValue, UserRole } from '@/types/auth';
+import type { AuthContextValue, AppUser, UserRole } from '@/types/auth';
 
 interface AuthProviderProps {
   children: React.ReactNode;
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ user: AppUser } | null>(null);
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const [allowedPages, setAllowedPages] = useState<string[]>([]);
+  const [schoolId, setSchoolId] = useState<number | null>(null);
+  const [schoolName, setSchoolName] = useState<string | null>(null);
 
-  const fetchUserRole = useCallback(async (userId: string | undefined) => {
-    if (!userId) {
-      setUserRole('admin');
-      return;
-    }
+  const fetchSession = useCallback(async () => {
+    setLoading(true);
     try {
-      const { role, error } = await getCurrentUserRole(userId);
-      if (error) {
-        setUserRole('admin');
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      const data = await res.json();
+      if (data.user) {
+        setUser(data.user);
+        setSession({ user: data.user });
+        setUserRole((data.user.role as UserRole) ?? null);
+        setAllowedPages(Array.isArray(data.allowedPages) ? data.allowedPages : []);
+        setSchoolId(data.schoolId ?? null);
+        setSchoolName(data.schoolName ?? null);
       } else {
-        setUserRole((role as UserRole) || 'admin');
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
+        setAllowedPages([]);
+        setSchoolId(null);
+        setSchoolName(null);
       }
-    } catch {
-      setUserRole('admin');
+    } catch (error) {
+      console.error('Error fetching session:', error);
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setAllowedPages([]);
+      setSchoolId(null);
+      setSchoolName(null);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN') {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setUserRole('admin');
-          fetchUserRole(session.user.id).catch(console.error);
-        }
-        setLoading(false);
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setUser(null);
-        setUserRole(null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [fetchUserRole]);
+    fetchSession();
+  }, [fetchSession]);
 
   const signUp = async (
-    email: string,
-    password: string,
-    userData: Record<string, unknown> = {}
+    _email: string,
+    _password: string,
+    _userData: Record<string, unknown> = {}
   ) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: userData },
-    });
-    return { data, error };
+    return {
+      data: null,
+      error: new Error('Account creation is managed by your administrator.'),
+    };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
+  const signIn = async (schoolIdParam: number, username: string, password: string) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          schoolId: schoolIdParam,
+          username: username.trim(),
+          password,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        return {
+          data: null,
+          error: new Error(data.error ?? 'Sign in failed.'),
+        };
+      }
+
+      setUser(data.user);
+      setSession({ user: data.user });
+      setUserRole((data.user.role as UserRole) ?? null);
+      setAllowedPages(Array.isArray(data.allowedPages) ? data.allowedPages : []);
+      setSchoolId(data.schoolId ?? null);
+      setSchoolName(data.schoolName ?? null);
+      return { data, error: null };
+    } catch (err) {
+      console.error('Sign in error:', err);
+      return {
+        data: null,
+        error: new Error('Unable to sign in. Please try again.'),
+      };
+    }
   };
 
   const signOut = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error('Sign out error:', error);
-          return { error };
-        }
-      }
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setAllowedPages([]);
+      setSchoolId(null);
+      setSchoolName(null);
       return { error: null };
     } catch (error) {
       console.error('Sign out error:', error);
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setSchoolId(null);
+      setSchoolName(null);
       return { error };
     }
   };
 
-  const resetPassword = async (email: string) => {
-    try {
-      // Ensure Supabase Dashboard → Auth → URL Configuration → Redirect URLs includes:
-      // https://<your-domain>/update-password and http://localhost:3000/update-password
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/update-password`,
-      });
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Reset password error:', error);
-      return { data: null, error };
-    }
+  const resetPassword = async (_email: string) => {
+    return {
+      data: null,
+      error: new Error('Please contact your administrator to reset your password.'),
+    };
   };
 
-  const updatePassword = async (newPassword: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Update password error:', error);
-      return { data: null, error };
-    } finally {
-      setLoading(false);
-    }
+  const updatePassword = async (_newPassword: string) => {
+    return {
+      data: null,
+      error: new Error('Please contact your administrator to change your password.'),
+    };
   };
 
-  const updateProfile = async (updates: Record<string, unknown>) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.updateUser({
-        data: updates,
-      });
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Update profile error:', error);
-      return { data: null, error };
-    } finally {
-      setLoading(false);
-    }
+  const updateProfile = async (_updates: Record<string, unknown>) => {
+    return {
+      data: null,
+      error: new Error('Profile updates are not available.'),
+    };
   };
 
   const isAdmin = () => userRole === 'admin';
 
-  const refreshUserRole = () => {
-    fetchUserRole(user?.id);
-  };
+  const canViewPage = useCallback(
+    (pathname: string) => {
+      const path = pathname.replace(/^\/+|\/+$/g, '') || 'dashboard';
+      const pageKey = path.split('/')[0] ?? 'dashboard';
+      if (allowedPages.length === 0) return true;
+      return allowedPages.includes(pageKey);
+    },
+    [allowedPages]
+  );
+
+  const refreshUserRole = useCallback(() => {
+    fetchSession();
+  }, [fetchSession]);
 
   const value: AuthContextValue = {
     user,
     session,
     loading,
     userRole,
+    allowedPages,
+    schoolId,
+    schoolName,
+    canViewPage,
     supabase,
     signUp,
     signIn,

@@ -2,7 +2,7 @@
 // This file contains functions to interact with the admin database queries
 
 import { supabase } from './supabase';
-import type { GetUsersWithRolesRow } from '@/types/database';
+import type { GetUsersWithRolesRow, School } from '@/types/database';
 
 type AdminAction =
   | 'create'
@@ -147,8 +147,31 @@ export async function deleteUserAccount(
   }
 }
 
-export async function getCurrentUserRole(userId?: string): Promise<{
+export async function getSchoolById(schoolId: number): Promise<{
+  data: School | null;
+  error: { message: string } | null;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('school')
+      .select('*')
+      .eq('school_id', schoolId)
+      .maybeSingle();
+
+    if (error) {
+      return { data: null, error: { message: error.message } };
+    }
+    return { data: data as School | null, error: null };
+  } catch (err) {
+    console.error('Error fetching school by id:', err);
+    return { data: null, error: { message: (err as Error).message } };
+  }
+}
+
+/** Returns role and school_id for the current (or given) user. Used for login school validation and context. */
+export async function getCurrentUserRoleWithSchool(userId?: string): Promise<{
   role: string | null;
+  school_id: number | null;
   error: { message: string } | null;
 }> {
   try {
@@ -158,44 +181,52 @@ export async function getCurrentUserRole(userId?: string): Promise<{
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        console.log('getCurrentUserRole: No authenticated user');
-        return { role: null, error: { message: 'No authenticated user' } };
+        return { role: null, school_id: null, error: { message: 'No authenticated user' } };
       }
       authUserId = user.id;
     }
 
     const { data: tableCheck, error: tableError } = await supabase
       .from('user_roles')
-      .select('role')
+      .select('role, school_id')
       .limit(1);
 
     if (tableError && tableError.code === 'PGRST116') {
       console.warn('user_roles table does not exist, defaulting to admin for testing');
-      return { role: 'admin', error: null };
+      return { role: 'admin', school_id: null, error: null };
     }
 
     const { data: rawData, error } = await supabase
       .from('user_roles')
-      .select('role')
+      .select('role, school_id')
       .eq('user_id', authUserId);
 
     if (error) {
-      console.error("Error fetching user role, defaulting to 'admin' for testing:", error);
-      return { role: 'admin', error: null };
+      console.error("Error fetching user role:", error);
+      return { role: 'admin', school_id: null, error: null };
     }
 
-    const data = rawData as { role?: string }[] | null;
+    const data = rawData as { role?: string; school_id?: number | null }[] | null;
     if (!data || data.length === 0) {
-      console.warn('No role found for user, defaulting to admin for testing');
-      return { role: 'admin', error: null };
+      return { role: null, school_id: null, error: { message: 'No role found for this user' } };
     }
 
-    const role = (data[0]?.role as string) ?? 'admin';
-    return { role, error: null };
+    const role = (data[0]?.role as string) ?? null;
+    const school_id = data[0]?.school_id ?? null;
+    return { role, school_id, error: null };
   } catch (error) {
-    console.error('Error fetching current user role, defaulting to admin for testing:', error);
-    return { role: 'admin', error: null };
+    console.error('Error fetching current user role:', error);
+    return { role: null, school_id: null, error: { message: (error as Error).message } };
   }
+}
+
+export async function getCurrentUserRole(userId?: string): Promise<{
+  role: string | null;
+  error: { message: string } | null;
+}> {
+  const { role, error } = await getCurrentUserRoleWithSchool(userId);
+  if (error) return { role: null, error };
+  return { role: role ?? 'admin', error: null };
 }
 
 export async function isCurrentUserAdmin(): Promise<boolean> {
@@ -351,6 +382,8 @@ const adminService = {
   updateUserPassword,
   deleteUserAccount,
   getCurrentUserRole,
+  getCurrentUserRoleWithSchool,
+  getSchoolById,
   isCurrentUserAdmin,
   setInitialAdmin,
   assignAdminRoleToCurrentUser,

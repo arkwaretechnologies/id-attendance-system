@@ -110,7 +110,7 @@ export default function Dashboard() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div style={{ marginBottom: '32px' }}>
         <h1>
-          Welcome back,{(user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email}
+          Welcome back, {user?.fullname ?? user?.email ?? user?.username}
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
           Here&apos;s what&apos;s happening with your attendance system today.
