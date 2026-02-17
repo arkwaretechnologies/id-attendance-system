@@ -107,7 +107,7 @@ export async function PATCH(
     const allowedKeys = new Set([
       'learner_reference_number', 'last_name', 'first_name', 'middle_name', 'extension_name',
       'sex', 'birthdate', 'age', 'school_year', 'grade_level', 'email_address', 'phone_number',
-      'rfid_tag', 'mother_tongue', 'current_house_number', 'current_sitio_street', 'current_barangay',
+      'rfid_tag', 'student_image_url', 'mother_tongue', 'current_house_number', 'current_sitio_street', 'current_barangay',
       'current_municipality_city', 'current_province', 'current_country', 'current_zip_code',
       'permanent_house_number', 'permanent_street', 'permanent_barangay', 'permanent_municipality_city',
       'permanent_province', 'permanent_country', 'permanent_zip_code', 'same_as_current_address',

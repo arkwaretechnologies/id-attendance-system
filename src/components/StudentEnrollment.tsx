@@ -18,6 +18,8 @@ const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
   const [success, setSuccess] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [copyAddress, setCopyAddress] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const schoolYearRef = useRef<HTMLInputElement>(null);
   
   const loading = contextLoading;
@@ -208,6 +210,20 @@ const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
     }
     
     try {
+      let studentImageUrl: string | null = null;
+      if (imageFile) {
+        const form = new FormData();
+        form.append('image', imageFile);
+        const uploadRes = await fetch('/api/students/upload-image', {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadJson.error ?? 'Failed to upload image');
+        studentImageUrl = uploadJson.url ?? null;
+      }
+
       const studentData = {
         // Enrollment Information
         school_year: formData.schoolYear,
@@ -215,6 +231,7 @@ const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
         school_id: schoolId ?? null,
         with_lrn: formData.withLRN,
         returning_student: formData.returningStudent,
+        student_image_url: studentImageUrl,
         // Learner Information
         psa_birth_certificate_number: formData.psaBirthCertificateNumber,
         learner_reference_number: formData.lrn,
@@ -439,6 +456,41 @@ const StudentEnrollment = ({ onCancel, onSuccess }: StudentEnrollmentProps) => {
                 <GraduationCap className="w-7 h-7 text-primary-600" />
                 Learner Information
               </h2>
+
+              {/* Student Photo */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                  Student Photo
+                </label>
+                <div className="flex flex-wrap items-start gap-4">
+                  <div className="w-24 h-24 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700/50" style={{ borderColor: 'var(--color-border)' }}>
+                    {imagePreviewUrl ? (
+                      <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-10 h-10 opacity-40" style={{ color: 'var(--color-text)' }} />
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="block w-full text-sm"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          setImageFile(f);
+                          setImagePreviewUrl(URL.createObjectURL(f));
+                        } else {
+                          setImageFile(null);
+                          if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+                          setImagePreviewUrl(null);
+                        }
+                      }}
+                    />
+                    <p className="text-xs mt-1 opacity-80" style={{ color: 'var(--color-text)' }}>JPEG, PNG, GIF or WebP. Max 5MB.</p>
+                  </div>
+                </div>
+              </div>
               
               {/* First Row: PSA Birth Certificate and LRN - Full Width */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">

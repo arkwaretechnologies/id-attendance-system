@@ -15,6 +15,7 @@ export interface StudentProfile {
   grade_level?: string | null;
   school_id?: number | null;
   rfid_tag?: string | null;
+  student_image_url?: string | null;
   created_at?: string | null;
   email_address?: string | null;
   phone_number?: string | null;

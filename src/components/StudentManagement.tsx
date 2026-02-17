@@ -22,6 +22,8 @@ const StudentManagement = () => {
   const [editForm, setEditForm] = useState<Partial<StudentProfile>>({})
   const [editLoading, setEditLoading] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreviewUrl, setEditImagePreviewUrl] = useState<string | null>(null)
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -130,6 +132,9 @@ const StudentManagement = () => {
     setEditStudentId(null)
     setEditForm({})
     setEditSaving(false)
+    setEditImageFile(null)
+    if (editImagePreviewUrl) URL.revokeObjectURL(editImagePreviewUrl)
+    setEditImagePreviewUrl(null)
   }
 
   const handleEditFormChange = (field: keyof StudentProfile, value: string | number | null) => {
@@ -142,11 +147,24 @@ const StudentManagement = () => {
     setEditSaving(true)
     setError('')
     try {
+      let payload = { ...editForm }
+      if (editImageFile) {
+        const form = new FormData()
+        form.append('image', editImageFile)
+        const uploadRes = await fetch('/api/students/upload-image', {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        })
+        const uploadJson = await uploadRes.json()
+        if (!uploadRes.ok) throw new Error(uploadJson.error ?? 'Failed to upload image')
+        payload = { ...payload, student_image_url: uploadJson.url ?? null }
+      }
       const res = await fetch(`/api/students/${editStudentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to update student')
@@ -259,6 +277,40 @@ const StudentManagement = () => {
               </div>
             ) : (
               <form onSubmit={handleEditSubmit} className="edit-student-modal-form p-6 space-y-4">
+                {/* Student Photo */}
+                <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <label className="form-label text-gray-800 dark:text-gray-200 block mb-2">Student Photo</label>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="w-24 h-24 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
+                      {editImagePreviewUrl ? (
+                        <img src={editImagePreviewUrl} alt="New" className="w-full h-full object-cover" />
+                      ) : editForm.student_image_url ? (
+                        <img src={editForm.student_image_url} alt="Current" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="block w-full text-sm text-gray-800 dark:text-gray-200"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) {
+                            setEditImageFile(f)
+                            setEditImagePreviewUrl(URL.createObjectURL(f))
+                          } else {
+                            setEditImageFile(null)
+                            if (editImagePreviewUrl) URL.revokeObjectURL(editImagePreviewUrl)
+                            setEditImagePreviewUrl(null)
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">JPEG, PNG, GIF or WebP. Max 5MB.</p>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label text-gray-800 dark:text-gray-200">LRN</label>
