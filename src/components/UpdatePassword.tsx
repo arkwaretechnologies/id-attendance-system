@@ -82,37 +82,17 @@ export default function UpdatePassword() {
 
   if (success) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        }}
-      >
-        <div
-          className="card"
-          style={{ width: '100%', maxWidth: '400px', margin: '20px' }}
-        >
+      <div className="auth-page">
+        <div className="auth-page__card">
           <div style={{ textAlign: 'center' }}>
-            <CheckCircle
-              size={64}
-              style={{ color: '#10b981', marginBottom: '24px' }}
-            />
-            <h1>Password Updated Successfully!</h1>
-            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+            <CheckCircle size={64} style={{ color: '#10b981', marginBottom: '1.5rem' }} />
+            <h1 className="auth-page__title">Password Updated Successfully!</h1>
+            <p className="auth-page__subtitle" style={{ marginBottom: '1.5rem' }}>
               Your password has been updated successfully. You will be redirected
               to the login page shortly.
             </p>
-            <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
-            <p
-              style={{
-                color: '#6b7280',
-                fontSize: '14px',
-                marginTop: '16px',
-              }}
-            >
+            <div className="loading-spinner" style={{ margin: '0 auto' }} />
+            <p className="auth-page__subtitle" style={{ marginTop: '1rem', fontSize: '0.875rem' }}>
               Redirecting in 3 seconds...
             </p>
           </div>
@@ -123,23 +103,14 @@ export default function UpdatePassword() {
 
   if (recoveryReady !== true) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        }}
-      >
-        <div
-          className="card"
-          style={{ width: '100%', maxWidth: '400px', margin: '20px' }}
-        >
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
-            <h1>{recoveryReady === false ? 'Redirecting...' : 'Checking recovery link...'}</h1>
-            <p style={{ color: '#6b7280' }}>
+      <div className="auth-page">
+        <div className="auth-page__card">
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 1rem' }} />
+            <h1 className="auth-page__title">
+              {recoveryReady === false ? 'Redirecting...' : 'Checking recovery link...'}
+            </h1>
+            <p className="auth-page__subtitle">
               {recoveryReady === false
                 ? 'Taking you back to reset password.'
                 : 'Please wait.'}
@@ -151,70 +122,37 @@ export default function UpdatePassword() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      }}
-    >
-      <div
-        className="card"
-        style={{ width: '100%', maxWidth: '400px', margin: '20px' }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Lock size={48} style={{ color: '#4f46e5', marginBottom: '16px' }} />
-          <h1>Update Your Password</h1>
-          <p style={{ color: '#6b7280' }}>
+    <div className="auth-page">
+      <div className="auth-page__card">
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <Lock size={48} style={{ color: '#06b6d4', marginBottom: '1rem' }} />
+          <h1 className="auth-page__title">Update Your Password</h1>
+          <p className="auth-page__subtitle">
             Please enter your new password below
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
           {error && (
-            <div
-              style={{
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#dc2626',
-                padding: '12px',
-                borderRadius: '6px',
-                marginBottom: '16px',
-                fontSize: '14px',
-              }}
-            >
+            <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
               {error}
             </div>
           )}
 
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                marginBottom: '6px',
-              }}
-            >
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label htmlFor="new-password" className="form-label">
               New Password
             </label>
             <div style={{ position: 'relative' }}>
               <input
+                id="new-password"
                 type={showPassword ? 'text' : 'password'}
+                className="form-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  paddingRight: '40px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                }}
-                placeholder="Enter new password"
+                placeholder="Type your new password"
                 required
+                style={{ paddingRight: '2.75rem' }}
               />
               <button
                 type="button"
@@ -229,38 +167,27 @@ export default function UpdatePassword() {
                   cursor: 'pointer',
                   color: '#6b7280',
                 }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                marginBottom: '6px',
-              }}
-            >
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <label htmlFor="confirm-password" className="form-label">
               Confirm New Password
             </label>
             <div style={{ position: 'relative' }}>
               <input
+                id="confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
+                className="form-input"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  paddingRight: '40px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                }}
                 placeholder="Confirm new password"
                 required
+                style={{ paddingRight: '2.75rem' }}
               />
               <button
                 type="button"
@@ -275,31 +202,14 @@ export default function UpdatePassword() {
                   cursor: 'pointer',
                   color: '#6b7280',
                 }}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
-                {showConfirmPassword ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              backgroundColor: loading ? '#9ca3af' : '#4f46e5',
-              color: 'white',
-              padding: '12px',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '16px',
-              fontWeight: '500',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
+          <button type="submit" className="auth-page__btn" disabled={loading}>
             {loading ? 'Updating Password...' : 'Update Password'}
           </button>
         </form>

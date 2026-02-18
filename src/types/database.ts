@@ -55,6 +55,16 @@ export interface Attendance {
   [key: string]: unknown;
 }
 
+/** Scan schedule session: time window for scanning (time_in, time_out). */
+export interface ScanSchedule {
+  id: string;
+  name: string;
+  time_in: string; // HH:mm or HH:mm:ss
+  time_out: string;
+  created_at?: string | null;
+  [key: string]: unknown;
+}
+
 /** RPC return types used by the app */
 export interface GetTodayAttendanceCountResult {
   count?: number;
@@ -160,6 +170,7 @@ export const PAGE_KEYS = [
   'rfid',
   'scanner',
   'attendance',
+  'schedule',
   'notifications',
   'users',
   'roles',
@@ -188,6 +199,11 @@ export interface Database {
         Row: Attendance;
         Insert: Partial<Attendance>;
         Update: Partial<Attendance>;
+      };
+      scan_schedule: {
+        Row: ScanSchedule;
+        Insert: Partial<ScanSchedule>;
+        Update: Partial<ScanSchedule>;
       };
       user_roles: {
         Row: UserRoleRow;

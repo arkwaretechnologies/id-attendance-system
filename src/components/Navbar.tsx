@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   Shield,
+  Clock,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -117,6 +118,13 @@ export default function Navbar() {
             <Link href="/attendance" className={isActive('/attendance')} onClick={closeSidebar}>
               <FileText size={20} />
               <span>Records</span>
+            </Link>
+          )}
+
+          {can('schedule') && (
+            <Link href="/schedule" className={isActive('/schedule')} onClick={closeSidebar}>
+              <Clock size={20} />
+              <span>Scan Schedule</span>
             </Link>
           )}
 

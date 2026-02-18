@@ -17,6 +17,12 @@
     --color-border: #E5E7EB;
     --color-bg-primary: #FFFFFF;
     --color-bg-secondary: #F9FAFB;
+    --text-secondary: #6b7280;
+    --border-color: #E5E7EB;
+    /* App gradient (login-style) */
+    --gradient-start: #06b6d4;
+    --gradient-mid: #a855f7;
+    --gradient-end: #ec4899;
     /* Fluid typography: min 1rem, preferred 2.5vw, max 2rem at 20px base */
     --text-base: clamp(1rem, 2.5vw, 1.25rem);
     --text-heading-1: clamp(1.5rem, 4vw + 1rem, 2rem);
@@ -54,6 +60,14 @@
     max-width: 100%;
   }
 
+  .main-content.app-page {
+    background: linear-gradient(160deg, #f0fdfa 0%, #faf5ff 40%, #fdf2f8 100%);
+  }
+
+  .dark .main-content.app-page {
+    background: linear-gradient(160deg, #134e4a 0%, #1e1b4b 40%, #431407 100%);
+  }
+
   /* Light mode: force all text to black (only when .dark is not applied) */
   html:not(.dark) body {
     color: #000000;
@@ -78,7 +92,21 @@
 }
 
 .form-input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.9375rem;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--gradient-start);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+  outline: none;
 }
 
 .form-input option {
@@ -86,7 +114,14 @@
 }
 
 .dark .form-input {
-  @apply bg-gray-700 border-gray-600 text-white;
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark .form-input:focus {
+  border-color: var(--gradient-start);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25);
 }
 
 .dark .form-input option {
@@ -94,11 +129,13 @@
 }
 
 .form-label {
-  @apply text-sm font-medium text-black;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
 }
 
 .dark .form-label {
-  @apply text-gray-300;
+  color: #e5e7eb;
 }
 
 /* Edit Student modal: ensure white background and visible text in light mode */
@@ -274,7 +311,7 @@
 }
 
 .sidebar-nav a.nav-link.active {
-  background-color: var(--color-primary);
+  background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-mid) 100%);
   color: white;
 }
 
@@ -322,35 +359,375 @@
   font-size: 0.875rem;
   text-align: left;
   color: var(--color-text);
+  border-collapse: collapse;
 }
 
 .data-table thead {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--color-text);
-  background-color: var(--color-border);
+  letter-spacing: 0.05em;
+  color: #374151;
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
-.data-table th, .data-table td {
-  padding: 0.75rem 1.5rem;
+.dark .data-table thead {
+  color: #e5e7eb;
+  background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.875rem 1.25rem;
   color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .data-table tbody tr {
   background-color: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.15s;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(6, 182, 212, 0.04);
+}
+
+.dark .data-table tbody tr:hover {
+  background-color: rgba(6, 182, 212, 0.08);
 }
 
 .data-table tbody tr:nth-child(odd) {
   background-color: var(--color-background);
 }
 
+.data-table tbody tr:nth-child(odd):hover {
+  background-color: rgba(6, 182, 212, 0.04);
+}
+
+.dark .data-table tbody tr:nth-child(odd):hover {
+  background-color: rgba(6, 182, 212, 0.08);
+}
+
 .card {
   background-color: var(--color-card);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
   padding: 1.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.dark .card {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Shared auth pages (login, reset-password, update-password): gradient background, shapes, white card */
+.auth-page {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #06b6d4 0%, #0ea5e9 35%, #a855f7 70%, #ec4899 100%);
+  z-index: 0;
+  padding: 1.5rem;
+}
+
+.auth-page__card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  padding: 2.5rem 2rem;
+}
+
+.auth-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+}
+
+.auth-page__subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+}
+
+.auth-page__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 50%, #a855f7 100%);
+  border: none;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  text-decoration: none;
+}
+
+.auth-page__btn:hover {
+  opacity: 0.95;
+}
+
+.auth-page__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Login page: gradient background, shapes, white card, pill button */
+.login-page {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #06b6d4 0%, #0ea5e9 35%, #a855f7 70%, #ec4899 100%);
+  z-index: 0;
+  padding: 1.5rem;
+}
+
+.login-page__shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-page__shape {
+  position: absolute;
+  opacity: 0.12;
+  border-radius: 4px;
+}
+
+.login-page__shape--1 {
+  width: 280px;
+  height: 280px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+  top: -80px;
+  left: -60px;
+  transform: rotate(-15deg);
+}
+
+.login-page__shape--2 {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+  top: 20%;
+  right: -40px;
+  transform: rotate(10deg);
+}
+
+.login-page__shape--3 {
+  width: 160px;
+  height: 160px;
+  background: linear-gradient(135deg, #06b6d4 0%, #a855f7 100%);
+  bottom: 15%;
+  left: 10%;
+  transform: rotate(5deg);
+}
+
+.login-page__card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  padding: 2.5rem 2rem;
+}
+
+.login-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+}
+
+.login-page__subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+}
+
+.login-page__alert {
+  font-size: 0.875rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.login-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.login-page__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.login-page__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-page__input-icon {
+  position: absolute;
+  left: 14px;
+  color: #9ca3af;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.login-page__input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  font-size: 1rem;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-page__input::placeholder {
+  color: #9ca3af;
+}
+
+.login-page__input:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+.login-page__input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-page__forgot-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+}
+
+.login-page__forgot {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.login-page__forgot:hover {
+  color: #374151;
+  text-decoration: underline;
+}
+
+.login-page__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 50%, #a855f7 100%);
+  border: none;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.05s;
+}
+
+.login-page__btn:hover:not(:disabled) {
+  opacity: 0.95;
+}
+
+.login-page__btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.login-page__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-page__btn-icon {
+  flex-shrink: 0;
+}
+
+.login-page__bottom {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.login-page__signup-link {
+  font-size: 0.875rem;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.login-page__signup-link:hover:not(:disabled) {
+  color: #111827;
+  text-decoration: underline;
+}
+
+.login-page__signup-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* App page headings (dashboard, students, etc.) */
+.page-heading {
+  font-size: var(--text-heading-1);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+}
+
+.page-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem 0;
 }
 
 /* Button Styles */
@@ -374,19 +751,24 @@
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
+  background: linear-gradient(90deg, var(--gradient-start) 0%, #0ea5e9 50%, var(--gradient-mid) 100%);
   color: white;
-  border-color: var(--color-primary);
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .btn-secondary {
   background-color: var(--color-card);
   color: var(--color-text);
-  border-color: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
 }
 
 .btn-secondary:hover {
@@ -412,8 +794,8 @@
 .alert {
   display: flex;
   align-items: center;
-  padding: 1rem;
-  border-radius: 0.375rem;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -451,6 +833,27 @@
   color: var(--color-text);
   opacity: 0.7;
   margin-top: 0.25rem;
+}
+
+/* RFID Assign modal: ensure text and Student Information box visible in light mode */
+html:not(.dark) .rfid-modal {
+  background-color: #ffffff;
+}
+html:not(.dark) .rfid-modal .rfid-modal-title,
+html:not(.dark) .rfid-modal .rfid-modal-text,
+html:not(.dark) .rfid-modal .form-label {
+  color: #111827;
+}
+html:not(.dark) .rfid-modal .rfid-modal-help {
+  color: #4b5563;
+}
+/* Student Information box: force light background and dark text in light mode */
+html:not(.dark) .rfid-modal-info-box {
+  background-color: #f3f4f6 !important;
+}
+html:not(.dark) .rfid-modal-info-box .rfid-modal-info-title,
+html:not(.dark) .rfid-modal-info-box .rfid-modal-info-text {
+  color: #111827 !important;
 }
 
 .text-muted {

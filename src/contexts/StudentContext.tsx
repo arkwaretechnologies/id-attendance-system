@@ -46,15 +46,19 @@ export function StudentProvider({ children }: StudentProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      type InsertRow = Database['public']['Tables']['student_profile']['Insert'];
-      const { data, error: err } = await supabase
-        .from('student_profile')
-        .insert([studentData as InsertRow] as never)
-        .select()
-        .single();
-      if (err) throw err;
-      setStudents((prev) => [data as StudentProfile, ...prev]);
-      return { data: data as StudentProfile, error: null };
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(studentData),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error ?? 'Failed to create student');
+      }
+      const data = json.student as StudentProfile;
+      setStudents((prev) => [data, ...prev]);
+      return { data, error: null };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       console.error('Error creating student:', err);

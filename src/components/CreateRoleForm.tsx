@@ -11,6 +11,7 @@ const PAGE_LABELS: Record<string, string> = {
   rfid: 'RFID Management',
   scanner: 'Scanner',
   attendance: 'Records',
+  schedule: 'Scan Schedule',
   notifications: 'Notifications',
   users: 'User Management',
   roles: 'Role Management',
@@ -23,6 +24,7 @@ const PAGE_KEYS = [
   'rfid',
   'scanner',
   'attendance',
+  'schedule',
   'notifications',
   'users',
   'roles',
@@ -101,7 +103,7 @@ export default function CreateRoleForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 p-6">
+      <form onSubmit={handleSubmit} className="card p-6">
         <div className="space-y-6">
           <div>
             <label htmlFor="role-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -161,13 +163,13 @@ export default function CreateRoleForm() {
         <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-600">
           <Link
             href="/roles"
-            className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium"
+            className="btn btn-secondary px-6 py-2.5 rounded-full font-medium"
           >
             Cancel
           </Link>
           <button
             type="submit"
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+            className="btn btn-primary px-6 py-2.5 font-medium disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Creating...' : 'Create Role'}

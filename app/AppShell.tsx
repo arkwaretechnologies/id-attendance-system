@@ -23,7 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="App">
       {user && <Navbar />}
-      <main className={`container ${user ? 'main-content' : ''}`}>
+      <main className={`container ${user ? 'main-content app-page' : ''}`}>
         {children}
       </main>
     </div>

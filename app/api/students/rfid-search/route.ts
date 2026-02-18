@@ -5,6 +5,8 @@ import { createServerSupabase } from '@/lib/supabase-server';
 export const dynamic = 'force-dynamic';
 
 const COOKIE_NAME = 'auth_session';
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 100;
 
 function getSecret(): Uint8Array {
   const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET;
@@ -27,7 +29,7 @@ async function getSession(request: NextRequest) {
   }
 }
 
-/** GET: search students for RFID assignment, scoped by session.school_id. */
+/** GET: cursor-based pagination for RFID search. Returns students, next_cursor, has_more. */
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession(request);
@@ -44,6 +46,12 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const schoolYear = searchParams.get('schoolYear') || '';
     const gradeLevel = searchParams.get('gradeLevel') || '';
+    const cursor = searchParams.get('cursor') || '';
+    const limitParam = searchParams.get('limit');
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Number(limitParam) || DEFAULT_PAGE_SIZE)
+    );
 
     const supabase = createServerSupabase();
     let query = supabase
@@ -52,8 +60,7 @@ export async function GET(request: NextRequest) {
         'id, learner_reference_number, last_name, first_name, middle_name, extension_name, school_year, grade_level, rfid_tag'
       )
       .eq('school_id', schoolId)
-      .order('last_name', { ascending: true })
-      .order('first_name', { ascending: true });
+      .order('id', { ascending: true });
 
     if (search.trim()) {
       const safe = search.trim().replace(/,/g, ' ');
@@ -65,13 +72,29 @@ export async function GET(request: NextRequest) {
     if (schoolYear) query = query.eq('school_year', schoolYear);
     if (gradeLevel) query = query.eq('grade_level', gradeLevel);
 
-    const { data, error } = await query;
+    if (cursor) {
+      query = query.gt('id', cursor);
+    }
+
+    const { data, error } = await query.limit(limit + 1);
+
     if (error) {
       console.error('RFID search error:', error);
       return NextResponse.json({ error: 'Failed to search students' }, { status: 500 });
     }
 
-    return NextResponse.json({ students: data ?? [] });
+    const rows = data ?? [];
+    const hasMore = rows.length > limit;
+    const students = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore && students.length > 0
+      ? (students[students.length - 1] as { id: string }).id
+      : null;
+
+    return NextResponse.json({
+      students,
+      next_cursor: nextCursor,
+      has_more: hasMore,
+    });
   } catch (err) {
     console.error('RFID search internal error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

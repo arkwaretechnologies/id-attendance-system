@@ -34,53 +34,23 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          zIndex: 0,
-        }}
-      >
-        <div
-          className="card"
-          style={{ width: '100%', maxWidth: '400px', margin: '20px', position: 'relative', zIndex: 1 }}
-        >
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <CheckCircle
-              size={48}
-              style={{ color: '#10b981', marginBottom: '16px' }}
-            />
-            <h1>Check Your Email</h1>
-            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+      <div className="auth-page">
+        <div className="auth-page__card">
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <CheckCircle size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
+            <h1 className="auth-page__title">Check Your Email</h1>
+            <p className="auth-page__subtitle" style={{ marginBottom: '1rem' }}>
               We&apos;ve sent a password reset link to <strong>{email}</strong>
             </p>
-            <p style={{ color: '#6b7280', fontSize: '14px' }}>
+            <p className="auth-page__subtitle" style={{ fontSize: '0.875rem' }}>
               Please check your email and click the link to reset your password.
               Don&apos;t forget to check your spam folder if you don&apos;t see it
               in your inbox.
             </p>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <Link
-              href="/login"
-              className="btn btn-primary"
-              style={{
-                width: '100%',
-                marginBottom: '16px',
-                textDecoration: 'none',
-                display: 'inline-block',
-              }}
-            >
-              <ArrowLeft
-                size={16}
-                style={{ marginRight: '8px', verticalAlign: 'middle' }}
-              />
+            <Link href="/login" className="auth-page__btn">
+              <ArrowLeft size={18} />
               Back to Login
             </Link>
           </div>
@@ -90,54 +60,39 @@ export default function ResetPassword() {
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        zIndex: 0,
-      }}
-    >
-      <div
-        className="card"
-        style={{ width: '100%', maxWidth: '400px', margin: '20px', position: 'relative', zIndex: 1 }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Mail size={48} style={{ color: '#3b82f6', marginBottom: '16px' }} />
-          <h1>Reset Password</h1>
-          <p style={{ color: '#6b7280' }}>
+    <div className="auth-page">
+      <div className="auth-page__card">
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <Mail size={48} style={{ color: '#06b6d4', marginBottom: '1rem' }} />
+          <h1 className="auth-page__title">Reset Password</h1>
+          <p className="auth-page__subtitle">
             Enter your email address and we&apos;ll send you a link to reset your
             password
           </p>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">
-              <Mail size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+            <label htmlFor="reset-email" className="form-label">
               Email Address
             </label>
             <input
+              id="reset-email"
               type="email"
               className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder="Type your email"
               required
               disabled={loading}
             />
           </div>
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginBottom: '20px' }}
+            className="auth-page__btn"
+            style={{ marginBottom: '1.25rem' }}
             disabled={loading}
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
@@ -147,14 +102,15 @@ export default function ResetPassword() {
           <Link
             href="/login"
             style={{
-              color: '#3b82f6',
+              color: '#6b7280',
               textDecoration: 'none',
-              fontWeight: '500',
+              fontSize: '0.875rem',
               display: 'inline-flex',
               alignItems: 'center',
+              gap: '0.5rem',
             }}
           >
-            <ArrowLeft size={16} style={{ marginRight: '8px' }} />
+            <ArrowLeft size={16} />
             Back to Login
           </Link>
         </div>

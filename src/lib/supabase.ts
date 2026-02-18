@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
-import type { StudentProfile, Parent, Attendance } from '@/types/database';
+import type { StudentProfile, Parent, Attendance, ScanSchedule } from '@/types/database';
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://localhost:54321';
@@ -351,6 +351,50 @@ export const db = {
         { learner_reference_number: learnerReferenceNumber } as never
       );
       return { data, error };
+    },
+  },
+
+  scanSchedule: {
+    getAll: async () => {
+      const { data, error } = await supabase
+        .from('scan_schedule')
+        .select('*')
+        .order('time_in', { ascending: true });
+      return { data, error };
+    },
+
+    getById: async (id: string) => {
+      const { data, error } = await supabase
+        .from('scan_schedule')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return { data, error };
+    },
+
+    create: async (session: Partial<ScanSchedule>) => {
+      const { data, error } = await supabase
+        .from('scan_schedule')
+        .insert([session] as never)
+        .select();
+      return { data, error };
+    },
+
+    update: async (id: string, updates: Partial<ScanSchedule>) => {
+      const { data, error } = await supabase
+        .from('scan_schedule')
+        .update(updates as never)
+        .eq('id', id)
+        .select();
+      return { data, error };
+    },
+
+    delete: async (id: string) => {
+      const { error } = await supabase
+        .from('scan_schedule')
+        .delete()
+        .eq('id', id);
+      return { error };
     },
   },
 };

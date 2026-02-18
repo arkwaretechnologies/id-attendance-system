@@ -82,3 +82,43 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** POST: create a student. Uses service role so RLS does not block insert. */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession(request);
+    if (!session?.user_id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    const schoolId = session.school_id ?? null;
+    if (schoolId == null) {
+      return NextResponse.json({ error: 'Missing school_id in session' }, { status: 400 });
+    }
+
+    const body = (await request.json()) as Record<string, unknown>;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+    }
+
+    const supabase = createServerSupabase();
+    const insertData = {
+      ...body,
+      school_id: schoolId,
+    };
+
+    const { data, error } = await supabase
+      .from('student_profile')
+      .insert([insertData] as never)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Students POST error:', error);
+      return NextResponse.json({ error: error.message ?? 'Failed to create student' }, { status: 500 });
+    }
+    return NextResponse.json({ student: data });
+  } catch (err) {
+    console.error('Students POST internal error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+

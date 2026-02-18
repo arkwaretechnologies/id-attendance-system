@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { getSchoolById } from '@/lib/adminService';
-import { LogIn, User, Lock, Building2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { User, Lock, Building2, ArrowRight } from 'lucide-react';
 
 type Step = 'school' | 'credentials';
 
@@ -70,153 +70,128 @@ export default function Login() {
     }
   };
 
-  const containerStyle: React.CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    zIndex: 0,
-  };
-
-  const cardStyle: React.CSSProperties = {
-    width: '100%',
-    maxWidth: '400px',
-    margin: '20px',
-    position: 'relative',
-    zIndex: 1,
-  };
-
   return (
-    <div style={containerStyle}>
-      <div className="card" style={cardStyle}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <LogIn size={48} style={{ color: '#3b82f6', marginBottom: '16px' }} />
-          <h1>Welcome Back</h1>
-          <p style={{ color: '#6b7280' }}>
-            {step === 'school'
-              ? 'Enter your school ID to continue'
-              : 'Sign in to your ID Attendance System account'}
-          </p>
-        </div>
+    <div className="login-page">
+      <div className="login-page__shapes">
+        <div className="login-page__shape login-page__shape--1" />
+        <div className="login-page__shape login-page__shape--2" />
+        <div className="login-page__shape login-page__shape--3" />
+      </div>
+
+      <div className="login-page__card">
+        <h1 className="login-page__title">Login</h1>
+        {step === 'school' && (
+          <p className="login-page__subtitle">Enter your school ID to continue</p>
+        )}
+        {step === 'credentials' && schoolName && (
+          <p className="login-page__subtitle">Sign in to {schoolName}</p>
+        )}
 
         {error && (
-          <div className="alert alert-error">
+          <div className="login-page__alert" role="alert">
             {error}
           </div>
         )}
 
         {step === 'school' ? (
-          <form onSubmit={handleSchoolContinue}>
-            <div className="form-group">
-              <label className="form-label">
-                <Building2 size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+          <form onSubmit={handleSchoolContinue} className="login-page__form">
+            <div className="login-page__field">
+              <label htmlFor="school-id" className="login-page__label">
                 School ID
               </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                className="form-input"
-                value={schoolIdInput}
-                onChange={(e) => setSchoolIdInput(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter your school ID"
-                required
-                disabled={validatingSchool}
-                autoFocus
-              />
+              <div className="login-page__input-wrap">
+                <Building2 size={20} className="login-page__input-icon" aria-hidden />
+                <input
+                  id="school-id"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  className="login-page__input"
+                  value={schoolIdInput}
+                  onChange={(e) => setSchoolIdInput(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Type your school ID"
+                  required
+                  disabled={validatingSchool}
+                  autoFocus
+                />
+              </div>
             </div>
             <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ width: '100%', marginBottom: '20px' }}
-                disabled={validatingSchool}
-              >
-              {validatingSchool ? 'Checking...' : (
-                <>
-                  Continue
-                  <ArrowRight size={18} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />
-                </>
-              )}
+              type="submit"
+              className="login-page__btn"
+              disabled={validatingSchool}
+            >
+              {validatingSchool ? 'Checking...' : 'Continue'}
+              <ArrowRight size={18} className="login-page__btn-icon" aria-hidden />
             </button>
           </form>
         ) : (
-          <>
-            {schoolName && (
-              <p style={{ marginBottom: '16px', fontSize: '14px', color: '#6b7280' }}>
-                School: <strong>{schoolName}</strong> (ID: {schoolIdInput})
-              </p>
-            )}
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">
-                  <User size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                  Username
-                </label>
+          <form onSubmit={handleSubmit} className="login-page__form">
+            <div className="login-page__field">
+              <label htmlFor="username" className="login-page__label">
+                Username
+              </label>
+              <div className="login-page__input-wrap">
+                <User size={20} className="login-page__input-icon" aria-hidden />
                 <input
+                  id="username"
                   type="text"
                   autoComplete="username"
-                  className="form-input"
+                  className="login-page__input"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  placeholder="Type your username"
                   required
                   disabled={loading}
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  <Lock size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                  Password
-                </label>
+            <div className="login-page__field">
+              <label htmlFor="password" className="login-page__label">
+                Password
+              </label>
+              <div className="login-page__input-wrap">
+                <Lock size={20} className="login-page__input-icon" aria-hidden />
                 <input
+                  id="password"
                   type="password"
-                  className="form-input"
+                  autoComplete="current-password"
+                  className="login-page__input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Type your password"
                   required
                   disabled={loading}
                 />
               </div>
+            </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ width: '100%', marginBottom: '12px' }}
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ width: '100%', marginBottom: '20px' }}
-                onClick={handleBackToSchool}
-                disabled={loading}
-              >
-                <ArrowLeft size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                Back to school ID
-              </button>
-            </form>
-
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-              <Link
-                href="/reset-password"
-                style={{
-                  color: '#3b82f6',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                }}
-              >
-                Forgot your password?
+            <div className="login-page__forgot-wrap">
+              <Link href="/reset-password" className="login-page__forgot">
+                Forgot password?
               </Link>
             </div>
-          </>
+
+            <button
+              type="submit"
+              className="login-page__btn"
+              disabled={loading}
+            >
+              {loading ? 'Signing in...' : 'LOGIN'}
+            </button>
+
+            <div className="login-page__bottom">
+              <button
+                type="button"
+                onClick={handleBackToSchool}
+                className="login-page__signup-link"
+                disabled={loading}
+              >
+                Back to school ID
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>

@@ -12,6 +12,7 @@ const PAGE_LABELS: Record<string, string> = {
   rfid: 'RFID Management',
   scanner: 'Scanner',
   attendance: 'Records',
+  schedule: 'Scan Schedule',
   notifications: 'Notifications',
   users: 'User Management',
   roles: 'Role Management',
@@ -30,7 +31,7 @@ export default function RoleManagement() {
   const [formDescription, setFormDescription] = useState('');
   const [formPageKeys, setFormPageKeys] = useState<string[]>([]);
 
-  const pageKeysList = ['dashboard', 'students', 'rfid', 'scanner', 'attendance', 'notifications', 'users', 'roles', 'enroll'] as const;
+  const pageKeysList = ['dashboard', 'students', 'rfid', 'scanner', 'attendance', 'schedule', 'notifications', 'users', 'roles', 'enroll'] as const;
 
   useEffect(() => {
     if (searchParams.get('created') === '1') {

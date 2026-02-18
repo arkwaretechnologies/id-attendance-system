@@ -108,11 +108,11 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div style={{ marginBottom: '32px' }}>
-        <h1>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 className="page-heading">
           Welcome back, {user?.fullname ?? user?.email ?? user?.username}
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
+        <p className="page-subtitle">
           Here&apos;s what&apos;s happening with your attendance system today.
         </p>
       </div>
@@ -125,7 +125,7 @@ export default function Dashboard() {
 
       <div className="stats-grid">
         <div className="card" style={{ textAlign: 'center' }}>
-          <Users size={48} style={{ color: '#3b82f6', marginBottom: '16px' }} />
+          <Users size={48} style={{ color: 'var(--gradient-start)', marginBottom: '16px' }} />
           <h3 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
             {stats.totalStudents}
           </h3>
@@ -146,7 +146,7 @@ export default function Dashboard() {
           <p style={{ color: 'var(--text-secondary)' }}>Total Records</p>
         </div>
         <div className="card" style={{ textAlign: 'center' }}>
-          <TrendingUp size={48} style={{ color: '#8b5cf6', marginBottom: '16px' }} />
+          <TrendingUp size={48} style={{ color: 'var(--gradient-mid)', marginBottom: '16px' }} />
           <h3 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
             {stats.attendanceRate}%
           </h3>
@@ -190,7 +190,7 @@ export default function Dashboard() {
                     width: '100%',
                     maxWidth: '40px',
                     height: `${height}px`,
-                    backgroundColor: isToday ? '#3b82f6' : 'var(--border-color)',
+                    backgroundColor: isToday ? 'var(--gradient-start)' : 'var(--border-color)',
                     borderRadius: '4px 4px 0 0',
                     marginBottom: '8px',
                     display: 'flex',
@@ -208,7 +208,7 @@ export default function Dashboard() {
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
-                    color: isToday ? '#3b82f6' : 'var(--text-secondary)',
+                    color: isToday ? 'var(--gradient-start)' : 'var(--text-secondary)',
                   }}
                 >
                   {day.day}
