@@ -17,7 +17,7 @@ async function getSession(request: NextRequest) {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return payload as { user_id?: number };
+    return payload as { user_id?: number; school_id?: number | null };
   } catch {
     return null;
   }
@@ -33,7 +33,7 @@ function normalizeTime(t: string): string {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-/** GET: list all scan schedule sessions. */
+/** GET: list scan schedule sessions for the current user's school. */
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession(request);
@@ -41,11 +41,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const schoolId = session.school_id ?? null;
     const supabase = createServerSupabase();
-    const { data, error } = await supabase
+    let query = supabase
       .from('scan_schedule')
       .select('*')
       .order('time_in', { ascending: true });
+
+    if (schoolId != null) {
+      query = query.eq('school_id', schoolId);
+    } else {
+      query = query.is('school_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Schedule GET error:', error);
@@ -58,13 +67,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST: create a new scan schedule session. Overlap is enforced by DB trigger. */
+/** POST: create a new scan schedule session for the current user's school. Overlap is enforced by DB trigger. */
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession(request);
     if (!session?.user_id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const schoolId = session.school_id ?? null;
 
     const body = (await request.json()) as { name?: string; time_in?: string; time_out?: string };
     const name = typeof body.name === 'string' ? body.name.trim() : '';
@@ -87,7 +98,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServerSupabase();
     const { data, error } = await supabase
       .from('scan_schedule')
-      .insert({ name, time_in: timeIn, time_out: timeOut } as never)
+      .insert({ name, time_in: timeIn, time_out: timeOut, school_id: schoolId } as never)
       .select()
       .single();
 

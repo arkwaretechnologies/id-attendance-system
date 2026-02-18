@@ -55,12 +55,13 @@ export interface Attendance {
   [key: string]: unknown;
 }
 
-/** Scan schedule session: time window for scanning (time_in, time_out). */
+/** Scan schedule session: time window for scanning (time_in, time_out), scoped by school_id. */
 export interface ScanSchedule {
   id: string;
   name: string;
   time_in: string; // HH:mm or HH:mm:ss
   time_out: string;
+  school_id?: number | null;
   created_at?: string | null;
   [key: string]: unknown;
 }
