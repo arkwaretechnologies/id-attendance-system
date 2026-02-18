@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '@/lib/supabase';
 import LoadingSpinner from './LoadingSpinner';
 import { FileText, Calendar, Filter, Download, Search } from 'lucide-react';
 import type { Attendance, StudentProfile } from '@/types/database';
@@ -76,12 +75,18 @@ export default function AttendanceRecords() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const { data: attendanceData, error: attendanceError } = await db.attendance.getAll();
-      if (attendanceError) throw attendanceError;
-      const { data: studentsData, error: studentsError } = await db.studentProfiles.getAll();
-      if (studentsError) throw studentsError;
-      setRecords((attendanceData as AttendanceWithProfile[]) || []);
-      setStudents((studentsData as StudentProfile[]) || []);
+      const [attendanceRes, studentsRes] = await Promise.all([
+        fetch('/api/attendance', { credentials: 'include' }),
+        fetch('/api/students?page=1&pageSize=5000', { credentials: 'include' }),
+      ]);
+      const attendanceJson = await attendanceRes.json().catch(() => ({}));
+      const studentsJson = await studentsRes.json().catch(() => ({}));
+
+      if (!attendanceRes.ok) throw new Error(attendanceJson.error ?? 'Failed to load attendance');
+      if (!studentsRes.ok) throw new Error(studentsJson.error ?? 'Failed to load students');
+
+      setRecords((attendanceJson.attendance ?? []) as AttendanceWithProfile[]);
+      setStudents((studentsJson.students ?? []) as StudentProfile[]);
     } catch (err) {
       setError('Failed to load attendance records');
       console.error('Load records error:', err);

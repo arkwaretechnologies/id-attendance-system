@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { db } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from './LoadingSpinner';
 import {
@@ -47,18 +46,24 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const { data: students, error: studentsError } = await db.studentProfiles.getAll();
-      if (studentsError) throw studentsError;
-      const { data: attendance, error: attendanceError } = await db.attendance.getAll();
-      if (attendanceError) throw attendanceError;
+      const [studentsRes, attendanceRes] = await Promise.all([
+        fetch('/api/students?page=1&pageSize=1', { credentials: 'include' }),
+        fetch('/api/attendance', { credentials: 'include' }),
+      ]);
+      const studentsData = await studentsRes.json().catch(() => ({}));
+      const attendanceData = await attendanceRes.json().catch(() => ({}));
+
+      if (!studentsRes.ok) throw new Error(studentsData.error ?? 'Failed to load students');
+      if (!attendanceRes.ok) throw new Error(attendanceData.error ?? 'Failed to load attendance');
+
+      const attendance = (attendanceData.attendance ?? []) as Attendance[];
+      const studentCount = Number(studentsData.count) ?? 0;
 
       const today = new Date().toISOString().split('T')[0];
-      const todayAttendance =
-        (attendance as Attendance[] | null)?.filter((record) =>
-          record.created_at?.startsWith(today)
-        ).length ?? 0;
+      const todayAttendance = attendance.filter((record) =>
+        record.created_at?.startsWith(today)
+      ).length;
 
-      const studentCount = (students as unknown[] | null)?.length ?? 0;
       const attendanceRate =
         studentCount > 0 ? Math.round((todayAttendance / studentCount) * 100) : 0;
 
@@ -67,9 +72,9 @@ export default function Dashboard() {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        const dayAttendance = (attendance as Attendance[] | null)?.filter(
-          (record) => record.created_at?.startsWith(dateStr)
-        ).length ?? 0;
+        const dayAttendance = attendance.filter((record) =>
+          record.created_at?.startsWith(dateStr)
+        ).length;
         weeklyAttendance.push({
           date: dateStr,
           count: dayAttendance,
@@ -80,11 +85,11 @@ export default function Dashboard() {
       setStats({
         totalStudents: studentCount,
         todayAttendance,
-        totalAttendance: (attendance as Attendance[] | null)?.length ?? 0,
+        totalAttendance: attendance.length,
         attendanceRate,
         weeklyAttendance,
       });
-      setRecentAttendance((attendance as Attendance[])?.slice(0, 10) ?? []);
+      setRecentAttendance(attendance.slice(0, 10));
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error('Dashboard error:', err);
